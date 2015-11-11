@@ -1,0 +1,14 @@
+<component name="libraryTable">
+  <library name="JOGL">
+    <CLASSES>
+      <root url="file://C:/JOGL" />
+      <root url="jar://C:/JOGL/graphicslib3D/graphicslib3D.jar!/" />
+    </CLASSES>
+    <JAVADOC>
+      <root url="file://C:/JOGL/graphicslib3D/javadoc" />
+      <root url="file://C:/JOGL/javadoc" />
+    </JAVADOC>
+    <SOURCES />
+    <jarDirectory url="file://C:/JOGL" recursive="false" />
+  </library>
+</component>
