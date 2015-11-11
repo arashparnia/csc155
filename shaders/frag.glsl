@@ -1,28 +1,39 @@
-
 #version 430
-in vec2 tc;
-in vec3 position;
-in vec4 vColor;
-//in float noise;
-out vec4 color;
 
+in vec2 tc;
+in vec3 varyingNormal;
+in vec3 varyingLightDir;
+in vec3 varyingVertPos;
+in vec3 varyingHalfVector;
+
+out vec4 fragColor;
+
+struct PositionalLight
+{	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	vec3 position;
+};
+
+struct Material
+{	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	float shininess;
+};
+
+uniform vec4 globalAmbient;
+uniform PositionalLight light;
+uniform Material material;
 uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
-uniform sampler2D s;
+uniform mat4 normalMat;
+uniform int l;
+layout (binding=0)  uniform sampler2D s;
 
-float rand(vec2 n)
-{
-  return fract(sin(dot(n.xy, vec2(12.9898, 78.233)))* 43758.5453);
-}
 
 void main(void)
 {
-color = texture2D(s,tc);
-    //color = vColor;
-	//float x = rand(vs_color);
-   // if (noise == 1){
-	 // color = vColor *  rand(vColor.xy);
-  //} else {
-    //color = vColor;
-  //}
+	fragColor =  texture2D(s,tc) ;//+ 0.8 * (globalAmbient * material.ambient);
+
 }

@@ -87,6 +87,7 @@ public class Astroid
                 Vector3D U = new Vector3D(from.minus(to1));
                 Vector3D V = new Vector3D(from.minus(to2));
                 Vector3D normal = V.cross(U);
+                normal.normalize();
                 vertices[(i%prec)*(prec+1)+(j%prec)].setNormal(normal);
             }}
 

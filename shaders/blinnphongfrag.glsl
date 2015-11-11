@@ -29,6 +29,7 @@ uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
 uniform mat4 normalMat;
 uniform int l;
+uniform int flipNormal;
 layout (binding=0)  uniform sampler2D s;
 
 

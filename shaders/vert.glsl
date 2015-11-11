@@ -1,23 +1,64 @@
 #version 430
+layout (location = 0) in vec3 vertPos;
+layout (location = 1) in vec3 vertNormal;
+layout (location = 2) in vec2 texPos;
 
-layout (location=0) in vec3 position;
-layout (location=1) in vec2 texPos;
-//layout (location = 1) in float n;
-//layout (location=1) in vec3 instancePosition;
+out vec2 tc;
 
+out vec3 varyingNormal;
+out vec3 varyingLightDir;
+out vec3 varyingVertPos;
+out vec3 varyingHalfVector;
+
+struct PositionalLight
+{	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	vec3 position;
+};
+struct Material
+{	vec4 ambient;
+	vec4 diffuse;
+	vec4 specular;
+	float shininess;
+};
+
+uniform vec4 globalAmbient;
+uniform PositionalLight light;
+uniform Material material;
 uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
+uniform mat4 normalMat;
 uniform sampler2D s;
+uniform int l;
+uniform int flipNormal;
+// four parameters are definition of a plane: Ax + By + Cz + D
+vec4 clip_plane = vec4(0.0, 0.0, 1.0, 0.5);
 
-out vec4 vColor;
-out vec2 tc;
-//out float noise;
-float rand(){
-  return  0;//(fract(sin(dot(vec2(gl_InstanceID,gl_InstanceID), vec2(12.9898, 78.233)))* 43758.5453) ) ;
+void main(void)
+{
+if (flipNormal==1) varyingNormal = -varyingNormal;
+ gl_ClipDistance[0] = dot(vec4(vertPos,1.0), clip_plane);
+
+    if (gl_InstanceID > 0){
+        float x = (1.1 * sin( gl_InstanceID )) * (gl_InstanceID/5);
+        float y = 0;; +cos(gl_InstanceID) * 1.2;
+        float z = (1.1* cos(gl_InstanceID )) * (gl_InstanceID/5);
+        vec3 pos = vertPos + vec3(x,y,z);
+
+        varyingVertPos = (mv_matrix * vec4(pos,1.0)).xyz;
+        varyingLightDir = light.position - varyingVertPos;
+        varyingNormal = (normalMat * vec4(vertNormal,1.0)).xyz;
+        varyingHalfVector =normalize(normalize(varyingLightDir)+ normalize(-varyingVertPos)).xyz;
+        gl_Position = proj_matrix * mv_matrix * vec4(pos,1.0);
+        tc = texPos;
+    } else {
+        varyingVertPos = (mv_matrix * vec4(vertPos,1.0)).xyz;
+	    varyingLightDir = light.position - varyingVertPos;
+	    varyingNormal = (normalMat * vec4(vertNormal,1.0)).xyz;
+	    varyingHalfVector =normalize(normalize(varyingLightDir) + normalize(-varyingVertPos)).xyz;
+	    gl_Position = proj_matrix * mv_matrix * vec4(vertPos,1.0);
+	    tc = texPos;
+	}
 }
-void main(void){
-	//noise = n;
-	gl_Position = proj_matrix * mv_matrix * vec4(position,1.0) ;//+ vec4(rand() * mod(20 ,rand())* 10 ,rand() * mod(gl_InstanceID, 13) * 10 ,1,1.0) ;
-	vColor = vec4(position,1.0)*2.0 + vec4(0.5, 0.5, 0.5, 0.0);
-	tc = texPos;
-}
+

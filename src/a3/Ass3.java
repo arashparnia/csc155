@@ -102,8 +102,8 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
     private float grassshininess = 10f;
     graphicslib3D.Material grassMaterial = new Material("grass",grassambient,grassdiffuse,grassspecular,grassemission,grassshininess);
     private float[] sunambient = {1.0f,1.0f,1.0f,1.0f};
-    private float[] sundiffuse = {1.0f,0.5f,0.0f,1.0f};
-    private float[] sunspecular =  {0.0f,0.0f,0.0f,1.0f};
+    private float[] sundiffuse = {1.0f,1.0f,1.0f,1.0f};
+    private float[] sunspecular =  {1.0f,1.0f,1.0f,1.0f};
     private float[] sunemission = {1.0f,1.0f,1.0f,1.0f};
     private float sunshininess = 10f;
     graphicslib3D.Material sunMaterial = new Material("sun",sunambient,sundiffuse,sunspecular,sunemission,sunshininess);
@@ -246,7 +246,7 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         installLights(mvStack.peek(),skinMaterial , drawable);
         mvStack.pushMatrix();
         mvStack.translate(5,1,10);
-        mvStack.scale(0.003, 0.003, 0.003);
+        mvStack.scale(0.001, 0.001, 0.001);
         mvStack.rotate(-85, 0, 1,0);
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[30]);
         gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
@@ -262,17 +262,13 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         gl.glDrawArrays(GL_TRIANGLES, 0, myModel.getIndices().length);
         mvStack.popMatrix();
         //------------------------------------------------------------------------ROCK
-        gl.glEnable(gl.GL_CLIP_DISTANCE0);
-
-
-        installLights(mvStack.peek(),Material.GOLD, drawable);
         mvStack.pushMatrix();
+        installLights(mvStack.peek(),Material.BRONZE, drawable);
         mvStack.translate(-5,1,-5);
-        mvStack.scale(4, 20, 4);
-        //mvStack.scale(rand.nextFloat(),rand.nextFloat(),rand.nextFloat());
+        mvStack.scale(5, 60, 5);
+        mvStack.rotate(55, 1, 0,0);
+         //mvStack.rotate(-degreePerSec(0.1f),0,1,0);
         mvStack.pushMatrix();
-        mvStack.rotate(-15, 0, 0,1);
-        //mvStack.rotate(-degreePerSec(0.01f),0,1,0);
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
         gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
         gl.glEnableVertexAttribArray(0);
@@ -284,20 +280,20 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         gl.glEnableVertexAttribArray(2);
         gl.glBindTexture(GL_TEXTURE_2D, moonTexture);
         setupDisplay(gl);
+        gl.glEnable(gl.GL_CLIP_DISTANCE0);
         gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
-        mvStack.popMatrix();
-        mvStack.popMatrix();
+
+        gl.glUniform1i(flip_location, 1);
+        gl.glFrontFace(GL_CW);
+        gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
         gl.glDisable(gl.GL_CLIP_DISTANCE0);
-
-
-
+        mvStack.popMatrix();
+        mvStack.popMatrix();
         //---------------------------------------------------------------------------GRASS
         installLights(mvStack.peek(), grassMaterial, drawable);
         mvStack.pushMatrix();
         //mvStack.translate(i, 0, j);
                 //mvStack.scale(.1, .1, .1);
-        mvStack.pushMatrix();
-
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[40]);
         gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
         gl.glEnableVertexAttribArray(0);
@@ -310,19 +306,44 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
         gl.glGenerateMipmap(GL_TEXTURE_2D);
         setupDisplay(gl);
-        gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,100);
+        gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,400);
+        mvStack.popMatrix();
+        //------------------------------------------------------------------------ LITTLE ROCK
+        mvStack.pushMatrix();
+        installLights(mvStack.peek(),Material.GOLD, drawable);
+        mvStack.translate(-5,1,-5);
+        mvStack.scale(2, 10, 2);
+        mvStack.scale(0.5+rand.nextFloat()/5,0.5+rand.nextFloat()/5,0.5+rand.nextFloat()/5);
+        mvStack.rotate(degreePerSec(0.01f), 0, 1,0);
+        mvStack.pushMatrix();
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
+        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(0);
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[21]);
+        gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(1);
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[22]);
+        gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(2);
+        gl.glBindTexture(GL_TEXTURE_2D, moonTexture);
+        setupDisplay(gl);
+        gl.glDrawArraysInstanced(GL_TRIANGLES, 0, rock.getIndices().length,1);
         mvStack.popMatrix();
         mvStack.popMatrix();
-
         //----------------------------------------------------------------------------------light
+
+        gl.glUseProgram(rendering_program_no_lighting);
+        mv_loc = gl.glGetUniformLocation(rendering_program_no_lighting, "mv_matrix");
+        proj_loc = gl.glGetUniformLocation(rendering_program_no_lighting, "proj_matrix");
+        n_location = gl.glGetUniformLocation(rendering_program_no_lighting, "normalMat");
+        light = gl.glGetUniformLocation(rendering_program_no_lighting,"l");
+        flip_location = gl.glGetUniformLocation(rendering_program_no_lighting, "flipNormal");
         installLights(mvStack.peek(),sunMaterial, drawable);
         mvStack.pushMatrix();
         mvStack.translate(lightLoc.getX(),lightLoc.getY(),lightLoc.getZ());
         mvStack.scale(0.1, 0.1, 0.1);
-        mvStack.pushMatrix();
         mvStack.rotate(degreePerSec(1f),1,0,0);
         mvStack.scale(0.5+rand.nextFloat()/2,0.5+rand.nextFloat()/2,0.5+rand.nextFloat()/2);
-
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
         gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
         gl.glEnableVertexAttribArray(0);
@@ -336,9 +357,10 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         gl.glUniform1i(flip_location, 1);
         gl.glBindTexture(GL_TEXTURE_2D, sunTexture);
         gl.glGenerateMipmap(GL_TEXTURE_2D);
-        gl.glFrontFace(GL_CCW);
+        gl.glFrontFace(GL_CW);
+
         gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
-        mvStack.popMatrix();
+        //gl.glDisable(GL_BLEND);
         mvStack.popMatrix();
 
 

@@ -33,22 +33,24 @@ uniform sampler2D s;
 uniform int l;
 uniform int flipNormal;
 // four parameters are definition of a plane: Ax + By + Cz + D
-vec4 clip_plane = vec4(0.0, 1.0, 0.0, 2.2);
+vec4 clip_plane = vec4(0.0, 0.0, -1.0,0.2);
 
 void main(void)
 {
-if (flipNormal==1) varyingNormal = -varyingNormal;
+
+
  gl_ClipDistance[0] = dot(vec4(vertPos,1.0), clip_plane);
 
     if (gl_InstanceID > 0){
-        float x = (1.3 * sin( gl_InstanceID )) * (gl_InstanceID/5);
-        float y = +cos(gl_InstanceID) * 1.2;
-        float z = (1.3* cos(gl_InstanceID )) * (gl_InstanceID/5);
+        float x = (0.6 * sin( gl_InstanceID )) * (gl_InstanceID/5);
+        float y = 0;// +cos(gl_InstanceID) * 1.2;
+        float z = (0.6* cos(gl_InstanceID )) * (gl_InstanceID/5);
         vec3 pos = vertPos + vec3(x,y,z);
 
         varyingVertPos = (mv_matrix * vec4(pos,1.0)).xyz;
         varyingLightDir = light.position - varyingVertPos;
         varyingNormal = (normalMat * vec4(vertNormal,1.0)).xyz;
+        if (flipNormal>0) varyingNormal = -varyingNormal;
         varyingHalfVector =normalize(normalize(varyingLightDir)+ normalize(-varyingVertPos)).xyz;
         gl_Position = proj_matrix * mv_matrix * vec4(pos,1.0);
         tc = texPos;
@@ -56,6 +58,7 @@ if (flipNormal==1) varyingNormal = -varyingNormal;
         varyingVertPos = (mv_matrix * vec4(vertPos,1.0)).xyz;
 	    varyingLightDir = light.position - varyingVertPos;
 	    varyingNormal = (normalMat * vec4(vertNormal,1.0)).xyz;
+	    if (flipNormal>0) varyingNormal = -varyingNormal;
 	    varyingHalfVector =normalize(normalize(varyingLightDir) + normalize(-varyingVertPos)).xyz;
 	    gl_Position = proj_matrix * mv_matrix * vec4(vertPos,1.0);
 	    tc = texPos;
