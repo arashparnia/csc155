@@ -70,7 +70,7 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
     private shapes.Sphere mySphere = new shapes.Sphere(48);
     private shapes.Astroid rock = new shapes.Astroid(100);
     private shapes.Astroid rock1 = new shapes.Astroid(100,2,3000,0.01f);
-    private shapes.Astroid rock2 = new shapes.Astroid(100,3,2000,0.01f);
+    private shapes.Astroid rock2 = new shapes.Astroid(100,1,2000,0.01f);
     private ImportedModel grassModel,myModel;
     //------------------------------------------------------------------------------------------MATRICIES
     private Matrix3D m_matrix = new Matrix3D();
@@ -89,7 +89,7 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
     private Vector3D xyz = new Vector3D(0,0,0);
     //------------------------------------------------------------------------------------------TEXTURE
     private TextureReader tr = new TextureReader();
-    private  int hotrockTexture,lavaTexture,diamondTexture,grassTexture,tigerTexture,rockTexture;
+    private  int hotrockTexture,lavaTexture,grassTexture,tigerTexture,rockTexture,waterTexture;
     //-------------------------------------------------------------------------------------------MATERIALS
     private float[] rockambient = {0.0f,0.0f,0.0f,1.0f};
     private float[] rockdiffuse = {0.1f,0.1f,0.1f,1.0f};
@@ -115,6 +115,12 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
     private float[] skinemission = {1.0f,1.0f,1.0f,1.0f};
     private float skinshininess = 44.8f;
     graphicslib3D.Material skinMaterial = new Material("skin",skinambient,skindiffuse,skinspecular,skinemission,skinshininess);
+    private float[] waterambient = {0.2f,0.2f,0.6f,1.0f};
+    private float[] waterdiffuse = {0.8f,0.9f,1.0f,1.0f};
+    private float[] waterspecular =  {0.2f,0.2f,0.4f,1.0f};
+    private float[] wateremission = {1.0f,1.0f,1.0f,1.0f};
+    private float watershininess = 50f;
+    graphicslib3D.Material waterMaterial = new Material("water",waterambient,waterdiffuse,waterspecular,wateremission,watershininess);
     //-------------------------------------------------------------------------------------------------LIGHT
     private int lights = 1;
     private PositionalLight currentLight = new PositionalLight();
@@ -166,7 +172,7 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         grassTexture    = tr.loadTexture(drawable, "textures/grass.jpg");
         hotrockTexture  = tr.loadTexture(drawable, "textures/hotrock.jpg");
         lavaTexture  = tr.loadTexture(drawable, "textures/lava.jpg");
-        diamondTexture  = tr.loadTexture(drawable, "textures/diamond.jpg");
+        waterTexture  = tr.loadTexture(drawable, "textures/water.jpg");
         tigerTexture = tr.loadTexture(drawable, "textures/tigertexture.jpg");
         animator = new Animator(myCanvas);
         Thread thread =new Thread(new Runnable(){ public void run() { animator.start();}});
@@ -197,6 +203,7 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         gl.glGenerateMipmap(GL_TEXTURE_2D);
         gl.glFrontFace(GL_CCW);
         gl.glUniform1i(flip_location, 0);
+        gl.glDisable(gl.GL_CLIP_DISTANCE0);
     }
     public void display(GLAutoDrawable drawable) {
         GL4 gl = (GL4) drawable.getGL();
@@ -226,10 +233,11 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
 //        lightLoc.setY(lightLoc.getY()+rand.nextInt((max - min) + 1) + min);
 //        lightLoc.setZ(lightLoc.getZ()+rand.nextInt((max - min) + 1) + min);
         currentLight.setPosition(lightLoc);
-//----------------------------------------------------------------------------------ground
-        installLights(mvStack.peek(),grassMaterial, drawable);
+//----------------------------------------------------------------------------------OCEAN
+        installLights(mvStack.peek(),waterMaterial, drawable);
         mvStack.pushMatrix();
-        mvStack.scale(500, 0.5, 500);
+        mvStack.translate(0,-1250,0);
+        mvStack.scale(5000, 5000, 5000);
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[100]);
         gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
         gl.glEnableVertexAttribArray(0);
@@ -239,11 +247,15 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[102]);
         gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
         gl.glEnableVertexAttribArray(2);
-         setupDisplay(gl);
-        gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
+        setupDisplay(gl);
+        gl.glEnable(GL_BLEND);
+        gl.glBlendFunc(GL_ONE,GL_ONE);
+        gl.glBindTexture(GL_TEXTURE_2D, waterTexture);
         gl.glGenerateMipmap(GL_TEXTURE_2D);
-        //gl.glFrontFace(GL_CW);
         gl.glDrawArrays(GL_TRIANGLES, 0, b.getFValues().length/3);
+        gl.glFrontFace(GL_CW);
+        gl.glDrawArrays(GL_TRIANGLES, 0, b.getFValues().length/3);
+        gl.glDisable(GL_BLEND);
         mvStack.popMatrix();
 //------------------------------------------------------------------------------- TIGER
         installLights(mvStack.peek(),skinMaterial , drawable);
@@ -264,34 +276,7 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         setupDisplay(gl);
         gl.glDrawArrays(GL_TRIANGLES, 0, myModel.getIndices().length);
         mvStack.popMatrix();
-        //------------------------------------------------------------------------ROCK
-        mvStack.pushMatrix();
-        installLights(mvStack.peek(),Material.SILVER, drawable);
-        mvStack.translate(-5,1,-5);
-        mvStack.scale(6, 60, 6);
-        mvStack.rotate(55, 1, 0,0);
-        //mvStack.rotate(-degreePerSec(0.001f),0,1,0);
-        mvStack.pushMatrix();
-        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
-        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
-        gl.glEnableVertexAttribArray(0);
-        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[21]);
-        gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
-        gl.glEnableVertexAttribArray(1);
-        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[22]);
-        gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
-        gl.glEnableVertexAttribArray(2);
-        gl.glBindTexture(GL_TEXTURE_2D, rockTexture);
-        setupDisplay(gl);
-        gl.glEnable(gl.GL_CLIP_DISTANCE0);
-        gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
 
-        gl.glUniform1i(flip_location, 1);
-        gl.glFrontFace(GL_CW);
-        gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
-        gl.glDisable(gl.GL_CLIP_DISTANCE0);
-        mvStack.popMatrix();
-        mvStack.popMatrix();
         //---------------------------------------------------------------------------GRASS
         installLights(mvStack.peek(), grassMaterial, drawable);
         mvStack.pushMatrix();
@@ -309,12 +294,12 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
         gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
         gl.glGenerateMipmap(GL_TEXTURE_2D);
         setupDisplay(gl);
-        gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,400);
+        gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,300);
         mvStack.popMatrix();
         //------------------------------------------------------------------------ middle ROCK
             mvStack.pushMatrix();
             installLights(mvStack.peek(), Material.GOLD, drawable);
-            mvStack.translate(-5 , 1, -5 );
+            //mvStack.translate(-5 , 1, -5 );
             mvStack.scale(2, 15, 2);
             mvStack.pushMatrix();
             gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
@@ -335,12 +320,12 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
 
 
 
-        for (int i = 10;i<35;i+=10) {
-            for (int j = 0; j < i; j+=1) {
+        for (int i = 10;i<35;i+=15) {
+            for (int j = 0; j < i; j+=2) {
                 //------------------------------------------------------------------------ ROCK 1
                 mvStack.pushMatrix();
                 installLights(mvStack.peek(), Material.BRONZE, drawable);
-                mvStack.translate(-5, 0, -5);
+                //mvStack.translate(-5, 0, -5);
                 mvStack.translate(Math.sin(j) * i, 0, Math.cos(j) *i);
                 mvStack.scale(0.5, 2.1+rand.nextFloat()/50, 0.4);
                 mvStack.rotate(45, 1, 0, 0);
@@ -362,7 +347,7 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
                 //------------------------------------------------------------------------ ROCK 2
                 mvStack.pushMatrix();
                 installLights(mvStack.peek(), Material.SILVER, drawable);
-                mvStack.translate(-5, 0, -5);
+                //mvStack.translate(-5, 0, -5);
                 mvStack.translate(Math.cos(j) * i, 0, Math.sin(j) *i);
                 mvStack.scale(0.8, 2+rand.nextFloat()/50, 0.4);
                 mvStack.rotate(75, 1, 0, 1);
@@ -424,6 +409,35 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
             gl.glUniformMatrix4fv(proj_loc, 1, false, pMat.getFloatValues(), 0);
             gl.glDrawArrays(GL_LINES, 0, 6);
         }
+        //------------------------------------------------------------------------BIG ROCK
+        mvStack.pushMatrix();
+        installLights(mvStack.peek(),Material.SILVER, drawable);
+        //mvStack.translate(-5,1,-5);
+        mvStack.scale(6, 60, 6);
+        mvStack.rotate(55, 1, 0,0);
+        //mvStack.rotate(-degreePerSec(0.001f),0,1,0);
+        mvStack.pushMatrix();
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
+        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(0);
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[21]);
+        gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(1);
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[22]);
+        gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(2);
+        gl.glBindTexture(GL_TEXTURE_2D, rockTexture);
+        setupDisplay(gl);
+        gl.glEnable(gl.GL_CLIP_DISTANCE0);
+        gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
+
+        gl.glUniform1i(flip_location, 1);
+        gl.glFrontFace(GL_CW);
+        gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
+        gl.glDisable(gl.GL_CLIP_DISTANCE0);
+        mvStack.popMatrix();
+        mvStack.popMatrix();
+
 
         mvStack.popMatrix();
     }

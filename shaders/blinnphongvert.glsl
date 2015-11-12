@@ -39,7 +39,7 @@ void main(void)
 {
 
 
- gl_ClipDistance[0] = dot(vec4(vertPos,1.0), clip_plane);
+    //gl_ClipDistance[0] = dot(vec4(vertPos,1.0), clip_plane);
 
     if (gl_InstanceID > 0){
         float x = (0.6 * sin( gl_InstanceID )) * (gl_InstanceID/5);

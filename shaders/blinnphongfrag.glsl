@@ -64,7 +64,7 @@ void main(void)
 
 	// compute ADS contributions (per pixel):
 	if (l==0){
-	fragColor =  texture2D(s,tc) ;//+ 0.8 * (globalAmbient * material.ambient);
+	fragColor =  0.5 * texture2D(s,tc) + 0.5 * (globalAmbient * material.ambient);
 	}else{
 	fragColor = 0.3 * texture2D(s,tc) + 0.7 * (globalAmbient * material.ambient
 	+ light.ambient * material.ambient
