@@ -20,6 +20,9 @@ public class Astroid
     private int[] indices;
     private Vertex3D[] vertices;
     private Random random = new Random();
+    int radius = 5;
+    int bumps = 1000;
+    float depth = -0.01f;
 
     public static int randInt(int min, int max) {
         Random rand = new Random();
@@ -28,9 +31,15 @@ public class Astroid
         int randomNum = rand.nextInt((max - min) + 1) + min;
         return randomNum;
     }
-
     public Astroid(int p)
     {	prec = p;
+        InitAstroid();
+    }
+    public Astroid(int p, int radius, int bumps, float depth)
+    {	prec = p;
+        this.radius = radius;
+        this.bumps= bumps;
+        this.depth= depth;
         InitAstroid();
     }
 
@@ -69,9 +78,6 @@ public class Astroid
         }	}
 
         //vertex manipulation
-        int radius = 5;
-        int bumps = 1000;
-        float depth = -0.01f;
         for (int k = 0;k<bumps;k++) {
             float d = depth;
             if (random.nextBoolean()) d *= -1;
