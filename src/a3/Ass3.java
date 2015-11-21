@@ -34,6 +34,7 @@ import static com.jogamp.opengl.GL.GL_CCW;
 
 
 public class Ass3 extends JFrame implements GLEventListener, ActionListener, MouseListener,MouseWheelListener,MouseMotionListener, KeyListener{
+
     private boolean animated = true;
     private Point mousePoint= new Point();
     public static boolean axis = false;
@@ -126,6 +127,7 @@ public class Ass3 extends JFrame implements GLEventListener, ActionListener, Mou
     private PositionalLight currentLight = new PositionalLight();
     private Point3D lightLoc = new Point3D( 8f,4f,11f);
     float [] globalAmbient = new float[] { 0.1f, 0.1f, 0.1f, 1.0f };
+
     //------------------------------------------------------------------------------------------------------
     public Ass3() {
         setTitle("Assignment 3 CSC155");

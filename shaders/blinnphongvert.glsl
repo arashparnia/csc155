@@ -42,9 +42,11 @@ void main(void)
     //gl_ClipDistance[0] = dot(vec4(vertPos,1.0), clip_plane);
 
     if (gl_InstanceID > 0){
-        float x = (0.6 * sin( gl_InstanceID )) * (gl_InstanceID/5);
+    int x = gl_InstanceID & 15;
+    int z = gl_InstanceID >> 4;
+        //float x = (0.6 * sin( gl_InstanceID )) * (gl_InstanceID/5);
         float y = 0;// +cos(gl_InstanceID) * 1.2;
-        float z = (0.6* cos(gl_InstanceID )) * (gl_InstanceID/5);
+        //float z = (0.6* cos(gl_InstanceID )) * (gl_InstanceID/5);
         vec3 pos = vertPos + vec3(x,y,z);
 
         varyingVertPos = (mv_matrix * vec4(pos,1.0)).xyz;
