@@ -23,9 +23,9 @@ public class TextureReader {
         byte[] imgRGBA = getRGBAPixelData(textureImage);
         ByteBuffer wrappedRGBA = ByteBuffer.wrap(imgRGBA);
 
-        int[] textureIDs = new int[2];
+        int[] textureIDs = new int[1];
         gl.glGenTextures(1, textureIDs, 0);
-        int textureID = textureIDs[1];
+        int textureID = textureIDs[0];
 
         // make the textureID the "current texture"
         gl.glBindTexture(GL.GL_TEXTURE_2D, textureID);

@@ -1,8 +1,7 @@
 #version 430
 //IN VARIABLES
-in vec3 vNormal, vLightDir, vVertPos, vHalfVec;
-in vec4 shadow_coord;
-in vec2 tc;
+layout (vertices = 4) out;
+in vec2 tc[];
 
 //LOCAL VARIABLES
 struct PositionalLight
@@ -31,25 +30,19 @@ layout (binding=4) uniform sampler2D tex_normal;
 //END UNIFORMS
 
 //OUT VARIABLES
-out vec4 fragColor;
-//END OUR VARIABLES
+out vec2 tcs_out[];
 
 void main(void)
-{	vec3 L = normalize(vLightDir);
-	vec3 N = normalize(vNormal);
-	vec3 V = normalize(-vVertPos);
-	vec3 H = normalize(vHalfVec);
-
-	float inShadow = textureProj(shadowTex, shadow_coord);
-
-	fragColor = globalAmbient * material.ambient
-				+ light.ambient * material.ambient;
-
-	if (inShadow != 0.0)
-	{	fragColor += light.diffuse * material.diffuse * max(dot(L,N),0.0)
-				+ light.specular * material.specular
-				* pow(max(dot(H,N),0.0),material.shininess*3.0);
+{	int TL = 28;
+	if (gl_InvocationID == 0)
+	{ gl_TessLevelOuter[0] = TL;
+	  gl_TessLevelOuter[2] = TL;
+	  gl_TessLevelOuter[1] = TL;
+	  gl_TessLevelOuter[3] = TL;
+	  gl_TessLevelInner[0] = TL;
+	  gl_TessLevelInner[1] = TL;
 	}
-
-	 fragColor = fragColor * 0.8  +  texture2D(s,tc) * 0.2 ;
+	
+	tcs_out[gl_InvocationID] = tc[gl_InvocationID];
+	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 }

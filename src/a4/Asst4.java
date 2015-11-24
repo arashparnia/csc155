@@ -61,15 +61,15 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private Random rand;
 
 
-	Matrix3D pMat;
-	MatrixStack mvStack;
+
+
 	//----------------------------------------------------------------------------------------OBJECTS
 	private Cube cube = new Cube();
-	private shapes.Ground ground = new shapes.Ground(1000);
+	//private shapes.Ground ground = new shapes.Ground(1000);
 	private shapes.Sphere mySphere = new shapes.Sphere(48);
 	private shapes.Astroid rock = new shapes.Astroid(100);
-	private shapes.Astroid rock1 = new shapes.Astroid(100,2,3000,0.01f);
-	private shapes.Astroid rock2 = new shapes.Astroid(100,1,2000,0.01f);
+	//private shapes.Astroid rock1 = new shapes.Astroid(100,2,3000,0.01f);
+	//private shapes.Astroid rock2 = new shapes.Astroid(100,1,2000,0.01f);
 	private ImportedModel grassModel = new ImportedModel("Grass_02.obj");
 	private ImportedModel myModel = new ImportedModel("Tiger.obj");
 	//------------------------------------------------------------------------------------------MATRICIES
@@ -124,8 +124,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	//-------------------------------------------------------------------------------------------------LIGHT
 	private int lights = 1;
 	private PositionalLight currentLight = new PositionalLight();
-	private Point3D lightLoc = new Point3D(15f,15f,15f);
-	float [] globalAmbient = new float[] { 0.8f, 0.8f, 0.8f, 1.0f };
+	private Point3D lightLoc = new Point3D(15f,40f,15f);
+	float [] globalAmbient = new float[] { 0.1f, 0.1f, 0.1f, 1.0f };
 
 	public Asst4() {
 		setTitle("Assignment 4 CSC155");
@@ -179,18 +179,21 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		n = n.mult(r);
 		v = v.mult(r);
 	}
+	private void transformRock(Matrix3D m){
+		m.setToIdentity();
+		m.translate(-5,5,5);
+		m.scale(1,5,2);
+		//m.rotate(180,0,1,1);
+	}
 	private void transformSphere(Matrix3D m){
 		m.setToIdentity();
 		m.translate(lightLoc.getX(),lightLoc.getY(),lightLoc.getZ());
 		m.scale(.1,.1,.1);
-
 	}
-	private void transformGrassModel(Matrix3D m){
+	private  void transformGrassModel(Matrix3D m){
 		m.setToIdentity();
 		m.translate(-20,0,-20);
 		m.scale(1,2,1);
-
-
 		//m.rotate(180,0,1,1);
 	}
 	private  void transformTheModel(Matrix3D m){
@@ -199,14 +202,14 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		m.translate(0,5,0);
 		m.scale(0.001,0.001,0.001);
 		m.rotate(amt,new Vector3D(0,1,0));
-
-
-
-
 	}
 
 	public void display(GLAutoDrawable drawable) {
 		GL4 gl = (GL4) drawable.getGL();
+
+		double amt = (double)(System.currentTimeMillis()%36000)/10000.0;
+		lightLoc.setX(Math.cos(amt)*20);
+		lightLoc.setZ(Math.sin(amt)*20);
 
 		currentLight.setPosition(lightLoc);
 		aspect = myCanvas.getWidth() / myCanvas.getHeight();
@@ -241,7 +244,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		secondPass(drawable);
 	}
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ PASS 1
-	public void firstPass(GLAutoDrawable drawable) {
+ 	public void firstPass(GLAutoDrawable drawable) {
 		GL4 gl = (GL4) drawable.getGL();
 		gl.glUseProgram(rendering_program1);
 		shadow_location = gl.glGetUniformLocation(rendering_program1, "shadowMVP");
@@ -253,19 +256,18 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		lightP_matrix = perspective(50.0f, aspect, 0.1f, 1000.0f);
 
 		//------------------------------------------------------------------SETTING CAMERA PASS 1
-		m_matrix = getUVNCamera();
-		// =================================================================draw the model PASS 1
+		//m_matrix.concatenate(getUVNCamera());
 
-		transformTheModel(m_matrix);
 
-		shadowMVP1.setToIdentity();
-		shadowMVP1.concatenate(lightP_matrix);
-		shadowMVP1.concatenate(lightV_matrix);
-		shadowMVP1.concatenate(m_matrix);
+		//=================================================================draw the rock PASS 1
+
+		transformRock(m_matrix);
+
+		shadowMVP1.setToIdentity();shadowMVP1.concatenate(lightP_matrix);shadowMVP1.concatenate(lightV_matrix);shadowMVP1.concatenate(m_matrix);
 		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP1.getFloatValues(), 0);
 
 		// set up torus vertices buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[30]);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
 		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
 		gl.glEnableVertexAttribArray(0);
 
@@ -275,7 +277,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 
-		gl.glDrawArrays(GL_TRIANGLES, 0, myModel.getIndices().length);
+		gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
 		// ---------------------------------------------------------------------draw the grassmodel PASS 1
 		transformGrassModel(m_matrix);
 
@@ -309,48 +311,50 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		//------------------------------------------------------------------SETTING CAMERA PASS 2
 		//  build the VIEW matrix
-		v_matrix = getUVNCamera();
-		//================================================================== draw the model PASS 2
 
-		thisMaterial = skinMaterial;
+		v_matrix.setToIdentity();
+		v_matrix.concatenate(getUVNCamera());
+
+		m_matrix.setToIdentity();
+
+
+
+		//================================================================== draw the rock PASS 2
+
+		thisMaterial = Material.GOLD;
 		installLights(rendering_program2, v_matrix, drawable);
-
 		//  build the MODEL matrix
-		transformTheModel(m_matrix);
-
+		transformRock(m_matrix);
 		//  build the MODEL-VIEW matrix
-		mv_matrix.setToIdentity();
-		mv_matrix.concatenate(v_matrix);
-		mv_matrix.concatenate(m_matrix);
-
+		// shadow matrix
 		shadowMVP2.setToIdentity();
 		shadowMVP2.concatenate(b);
 		shadowMVP2.concatenate(lightP_matrix);
 		shadowMVP2.concatenate(lightV_matrix);
 		shadowMVP2.concatenate(m_matrix);
 
+		//  build the MODEL-VIEW matrix
+		mv_matrix.setToIdentity();
+		mv_matrix.concatenate(v_matrix);
+		mv_matrix.concatenate(m_matrix);
 		//  put the MV and PROJ matrices into the corresponding uniforms
 		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
 		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
 		gl.glUniformMatrix4fv(n_location, 1, false, (mv_matrix.inverse()).transpose().getFloatValues(), 0);
 		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP2.getFloatValues(), 0);
 
-		// set up torus vertices buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[30]);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
 		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
 		gl.glEnableVertexAttribArray(0);
-
-		// set up torus normals buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[31]);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[21]);
 		gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
 		gl.glEnableVertexAttribArray(1);
-		// set up texture buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[32]);
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[22]);
 		gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
 		gl.glEnableVertexAttribArray(2);
 
 		gl.glActiveTexture(GL_TEXTURE1);
-		gl.glBindTexture(GL_TEXTURE_2D, tigerTexture);
+		gl.glBindTexture(GL_TEXTURE_2D, rockTexture);
 		gl.glGenerateMipmap(GL_TEXTURE_2D);
 		gl.glActiveTexture(GL_TEXTURE0);
 
@@ -360,37 +364,30 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 
-		// activate the 0th texture unit and bind it to the mountain texture object
-		//gl.glActiveTexture(gl.GL_TEXTURE0);
-		//gl.glBindTexture(gl.GL_TEXTURE_2D, tigerTexture);
-
-		gl.glDrawArrays(GL_TRIANGLES, 0, myModel.getIndices().length);
-
+		gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
 		// ==================================================================draw the grass PASS 2
-
 		thisMaterial = grassMaterial;
 		installLights(rendering_program2, v_matrix, drawable);
 
 		//  build the MODEL matrix
 		transformGrassModel(m_matrix);
-
+		//  build the shadow
+		shadowMVP2.setToIdentity();
+		shadowMVP2.concatenate(b);
+		shadowMVP2.concatenate(lightP_matrix);
+		shadowMVP2.concatenate(lightV_matrix);
+		shadowMVP2.concatenate(m_matrix);
 
 		//  build the MODEL-VIEW matrix
 		mv_matrix.setToIdentity();
 		mv_matrix.concatenate(v_matrix);
 		mv_matrix.concatenate(m_matrix);
 
-		shadowMVP2.setToIdentity();
-		shadowMVP2.concatenate(b);
-		shadowMVP2.concatenate(lightP_matrix);
-		shadowMVP2.concatenate(lightV_matrix);
-		shadowMVP2.concatenate(m_matrix);
-		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP2.getFloatValues(), 0);
-
 		//  put the MV and PROJ matrices into the corresponding uniforms
 		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
 		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
 		gl.glUniformMatrix4fv(n_location, 1, false, (mv_matrix.inverse()).transpose().getFloatValues(), 0);
+		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP2.getFloatValues(), 0);
 
 		// set up vertices buffer
 		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[40]);
@@ -419,25 +416,26 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		//gl.glDrawArrays(GL_TRIANGLES, 0, grassModel.getIndices().length);
 		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,8*8);
+
 //================================================================== draw the LIGHT PASS 2
 
 		thisMaterial = sunMaterial;
 		installLights(rendering_program2, v_matrix, drawable);
 
 		//  build the MODEL matrix
+
 		transformSphere(m_matrix);
-
-		//  build the MODEL-VIEW matrix
-		mv_matrix.setToIdentity();
-		mv_matrix.concatenate(v_matrix);
-		mv_matrix.concatenate(m_matrix);
-
+		//shadow
 		shadowMVP2.setToIdentity();
 		shadowMVP2.concatenate(b);
 		shadowMVP2.concatenate(lightP_matrix);
 		shadowMVP2.concatenate(lightV_matrix);
 		shadowMVP2.concatenate(m_matrix);
 
+		//  build the MODEL-VIEW matrix
+		mv_matrix.setToIdentity();
+		mv_matrix.concatenate(v_matrix);
+		mv_matrix.concatenate(m_matrix);
 		//  put the MV and PROJ matrices into the corresponding uniforms
 		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
 		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
@@ -462,6 +460,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glDepthFunc(GL_LEQUAL);
 
 		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
+
+
 	}
 
 
@@ -514,66 +514,6 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		FloatBuffer texBuf = FloatBuffer.wrap(tvalues);
 		gl.glBufferData(GL.GL_ARRAY_BUFFER, texBuf.limit() * 4, texBuf, GL.GL_STATIC_DRAW);
 	}//100,101,102
-	private void setupVerticesRock1(GL4 gl) { // ROCK
-		Vertex3D[] vertices = rock1.getVertices();
-		int[] indices = rock1.getIndices();
-		float[] fvalues = new float[indices.length * 3];
-		float[] tvalues = new float[indices.length * 2];
-		float[] nvalues = new float[indices.length * 3];
-		for (int i = 0; i < indices.length; i++)
-		{
-			fvalues[i * 3] = (float) (vertices[indices[i]]).getX();
-			fvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getY();
-			fvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getZ();
-			tvalues[i * 2] = (float) (vertices[indices[i]]).getS();
-			tvalues[i * 2 + 1] = (float) (vertices[indices[i]]).getT();
-			nvalues[i * 3] = (float) (vertices[indices[i]]).getNormalX();
-			nvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getNormalY();
-			nvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getNormalZ();
-		}
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[110]);
-		FloatBuffer vertBuf = FloatBuffer.wrap(fvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, vertBuf.limit() * 4, vertBuf, GL.GL_STATIC_DRAW);
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[111]);
-		FloatBuffer norBuf = FloatBuffer.wrap(nvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, norBuf.limit() * 4, norBuf, GL.GL_STATIC_DRAW);
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[112]);
-		FloatBuffer texBuf = FloatBuffer.wrap(tvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, texBuf.limit() * 4, texBuf, GL.GL_STATIC_DRAW);
-	}//110,111,112
-	private void setupVerticesRock2(GL4 gl) { // ROCK
-		Vertex3D[] vertices = rock2.getVertices();
-		int[] indices = rock2.getIndices();
-		float[] fvalues = new float[indices.length * 3];
-		float[] tvalues = new float[indices.length * 2];
-		float[] nvalues = new float[indices.length * 3];
-		for (int i = 0; i < indices.length; i++)
-		{
-			fvalues[i * 3] = (float) (vertices[indices[i]]).getX();
-			fvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getY();
-			fvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getZ();
-			tvalues[i * 2] = (float) (vertices[indices[i]]).getS();
-			tvalues[i * 2 + 1] = (float) (vertices[indices[i]]).getT();
-			nvalues[i * 3] = (float) (vertices[indices[i]]).getNormalX();
-			nvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getNormalY();
-			nvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getNormalZ();
-		}
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[120]);
-		FloatBuffer vertBuf = FloatBuffer.wrap(fvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, vertBuf.limit() * 4, vertBuf, GL.GL_STATIC_DRAW);
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[121]);
-		FloatBuffer norBuf = FloatBuffer.wrap(nvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, norBuf.limit() * 4, norBuf, GL.GL_STATIC_DRAW);
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[122]);
-		FloatBuffer texBuf = FloatBuffer.wrap(tvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, texBuf.limit() * 4, texBuf, GL.GL_STATIC_DRAW);
-	}//120,121,122
 	private void setupVerticesSphere(GL4 gl){
 		Vertex3D[] vertices = mySphere.getVertices();
 		int[] indices = mySphere.getIndices();
@@ -603,38 +543,6 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		FloatBuffer texBuf = FloatBuffer.wrap(tvalues);
 		gl.glBufferData(GL.GL_ARRAY_BUFFER, texBuf.limit() * 4, texBuf, GL.GL_STATIC_DRAW);
 	}//00,01,02
-	private void setupVerticesGrass(GL4 gl) { // GRASS
-		Vertex3D[] vertices = ground.getVertices();
-		int[] indices = ground.getIndices();
-		float[] fvalues = new float[indices.length * 3];
-		float[] tvalues = new float[indices.length * 2];
-		float[] nvalues = new float[indices.length * 3];
-		for (int i = 0; i < indices.length; i++)
-		{
-			fvalues[i * 3] = (float) (vertices[indices[i]]).getX();
-			fvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getY();
-			fvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getZ();
-			tvalues[i * 2] = (float) (vertices[indices[i]]).getS();
-			tvalues[i * 2 + 1] = (float) (vertices[indices[i]]).getT();
-			nvalues[i * 3] = (float) (vertices[indices[i]]).getNormalX();
-			nvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getNormalY();
-			nvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getNormalZ();
-		}
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[10]);
-		FloatBuffer vertBuf = FloatBuffer.wrap(fvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, vertBuf.limit() * 4, vertBuf, GL.GL_STATIC_DRAW);
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[11]);
-		FloatBuffer norBuf = FloatBuffer.wrap(nvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, norBuf.limit() * 4, norBuf, GL.GL_STATIC_DRAW);
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[12]);
-		FloatBuffer texBuf = FloatBuffer.wrap(tvalues);
-		gl.glBufferData(GL.GL_ARRAY_BUFFER, texBuf.limit() * 4, texBuf, GL.GL_STATIC_DRAW);
-
-
-	}//10,11,12
 	private void setupVerticesRock(GL4 gl) { // ROCK
 		Vertex3D[] vertices = rock.getVertices();
 		int[] indices = rock.getIndices();
@@ -734,13 +642,10 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glBindVertexArray(vao[0]);
 		gl.glGenBuffers(vbo.length, vbo, 0);
 		setupVerticesSphere(gl);
-		//setupVerticesGrass(gl);
-		//setupVerticesRock(gl);
+		setupVerticesRock(gl);
 		setupVerticesMyModel(gl);
 		setupVerticesGrassModel(gl);
 		//setupVerteciesCube(gl);
-		//setupVerticesRock1(gl);
-		//setupVerticesRock2(gl);
 	}
 	// -----------------------------
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
