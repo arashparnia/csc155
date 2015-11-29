@@ -1,35 +1,27 @@
 #version 430
-//IN VARIABLES
+
 layout (vertices = 4) out;
+
 in vec2 tc[];
+out vec2 tcs_out[];
 
-//LOCAL VARIABLES
-struct PositionalLight
-{	vec4 ambient, diffuse, specular;
-	vec3 position;
-};
-struct Material
-{	vec4 ambient, diffuse, specular;
-	float shininess;
-};
-
-//UNIFORMS
 uniform mat4 mvp;
+layout (binding=0) uniform sampler2D tex_color;
+layout (binding = 1) uniform sampler2D tex_height;
+layout (binding = 2) uniform sampler2D tex_normal;
+
+/*--- light stuff----*/
+struct PositionalLight
+{	vec4 ambient; vec4 diffuse; vec4 specular; vec3 position; };
+struct Material
+{	vec4 ambient; vec4 diffuse; vec4 specular; float shininess; };
 uniform vec4 globalAmbient;
 uniform PositionalLight light;
 uniform Material material;
 uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
 uniform mat4 normalMat;
-uniform mat4 shadowMVP;
-layout (binding=0) uniform sampler2DShadow shadowTex;
-layout (binding=1)  uniform sampler2D s;
-layout (binding=2) uniform sampler2D tex_height;
-layout (binding=3) uniform sampler2D tex_normal;
-//END UNIFORMS
-
-//OUT VARIABLES
-out vec2 tcs_out[];
+/*-----------------*/
 
 void main(void)
 {	int TL = 28;
@@ -41,7 +33,7 @@ void main(void)
 	  gl_TessLevelInner[0] = TL;
 	  gl_TessLevelInner[1] = TL;
 	}
-	
+
 	tcs_out[gl_InvocationID] = tc[gl_InvocationID];
 	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
 }

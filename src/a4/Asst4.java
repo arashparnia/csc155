@@ -21,9 +21,8 @@ import utilities.*;
 public class Asst4 extends JFrame implements GLEventListener, ActionListener, MouseListener,MouseWheelListener,MouseMotionListener, KeyListener{
 
 	graphicslib3D.Material thisMaterial;
-	private String[] vBlinn1ShaderSource, vBlinn2ShaderSource, fBlinn2ShaderSource,tcshaderSource,teshaderSource;
 	private GLCanvas myCanvas;
-	private int rendering_program1, rendering_program2;
+	private int rendering_program1, rendering_program2,rendering_program3;
 	private int mv_location, proj_location, vertexLoc, n_location,shadow_location;
 	float aspect;
 	private GLSLUtils util = new GLSLUtils();
@@ -89,7 +88,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private Vector3D xyz = new Vector3D(0,0,0);
 	//------------------------------------------------------------------------------------------TEXTURE
 	private TextureReader tr = new TextureReader();
-	private  int grassTexture,tigerTexture,rockTexture,waterTexture,heightTexture,normalTexture;
+	private  int grassTexture,tigerTexture,rockTexture,waterTexture,heightTexture,normalTexture,textureID0,textureID1,textureID2;
 	//-------------------------------------------------------------------------------------------MATERIALS
 	private float[] rockambient = {0.0f,0.0f,0.0f,1.0f};
 	private float[] rockdiffuse = {0.1f,0.1f,0.1f,1.0f};
@@ -154,7 +153,12 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	}
 	public void init(GLAutoDrawable drawable) {
 		GL4 gl = (GL4) drawable.getGL();
-		createShaderPrograms(drawable);
+		Shader sh = new Shader();
+
+		rendering_program1 = sh.createShaderPrograms(drawable,"shaders/Vert1.glsl","shaders/Frag1.glsl");
+		rendering_program2 = sh.createShaderPrograms(drawable,"shaders/Vert2.glsl","shaders/Frag2.glsl");
+		rendering_program3 = sh.createShaderPrograms(drawable,"shaders/Vert3.glsl","shaders/Frag2.glsl","shaders/TessC3.glsl","shaders/TessE3.glsl");
+
 		setupVertices(gl);
 		setupShadowBuffers(drawable);
 		b.setElementAt(0,0,0.5);b.setElementAt(0,1,0.0);b.setElementAt(0,2,0.0);b.setElementAt(0,3,0.5f);
@@ -166,11 +170,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 
 		rockTexture = tr.loadTexture(drawable, "textures/rock.jpg");
-		grassTexture    = tr.loadTexture(drawable, "textures/grass.jpg");
-		//hotrockTexture  = tr.loadTexture(drawable, "textures/hotrock.jpg");
-		//lavaTexture  = tr.loadTexture(drawable, "textures/lava.jpg");
-		//waterTexture  = tr.loadTexture(drawable, "textures/water.jpg");
-		tigerTexture = tr.loadTexture(drawable, "textures/tigertexture.jpg");
+		grassTexture = tr.loadTexture(drawable, "textures/grass.jpg");
+
+		textureID0 = tr.loadTexture(drawable, "textures/moon.jpg");
+		textureID1 = tr.loadTexture(drawable, "textures/height.jpg");
+		textureID2 = tr.loadTexture(drawable, "textures/normal.jpg");
 
 		xyz.setZ(25);
 		xyz.setY(20);
@@ -255,10 +259,6 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		lightV_matrix = lookAt(lightLoc, new Point3D(0.0, 0.0, 0.0), new Vector3D(0.0, 1.0, 0.0));	// vector from light to origin
 		lightP_matrix = perspective(50.0f, aspect, 0.1f, 1000.0f);
 
-		//------------------------------------------------------------------SETTING CAMERA PASS 1
-		//m_matrix.concatenate(getUVNCamera());
-
-
 		//=================================================================draw the rock PASS 1
 
 		transformRock(m_matrix);
@@ -297,7 +297,6 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 
-		//gl.glDrawArrays(GL_TRIANGLES, 0, grassModel.getIndices().length);
 		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,8*8);
 	}
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ PASS 2
@@ -310,14 +309,9 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		shadow_location = gl.glGetUniformLocation(rendering_program2,  "shadowMVP");
 
 		//------------------------------------------------------------------SETTING CAMERA PASS 2
-		//  build the VIEW matrix
-
 		v_matrix.setToIdentity();
 		v_matrix.concatenate(getUVNCamera());
-
 		m_matrix.setToIdentity();
-
-
 
 		//================================================================== draw the rock PASS 2
 
@@ -325,7 +319,6 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		installLights(rendering_program2, v_matrix, drawable);
 		//  build the MODEL matrix
 		transformRock(m_matrix);
-		//  build the MODEL-VIEW matrix
 		// shadow matrix
 		shadowMVP2.setToIdentity();
 		shadowMVP2.concatenate(b);
@@ -460,64 +453,42 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
 
+		//-----------------PROGRAM 3 ------------------------------------TESSELATION HIGHT MAP INSTANCED  PASS 2
+		gl.glUseProgram(rendering_program3);
 
 
-		//====================================================================== tessolated path
 		int mvp_location = gl.glGetUniformLocation(rendering_program, "mvp");
-		thisMaterial = grassMaterial;
-		installLights(rendering_program2, v_matrix, drawable);
+		int mv_location = gl.glGetUniformLocation(rendering_program, "mv_matrix");
+		int proj_location = gl.glGetUniformLocation(rendering_program, "proj_matrix");
+		int n_location = gl.glGetUniformLocation(rendering_program, "normalMat");
 
-		//  build the MODEL matrix
-		transformGrassModel(m_matrix);
-		//  build the shadow
-		shadowMVP2.setToIdentity();
-		shadowMVP2.concatenate(b);
-		shadowMVP2.concatenate(lightP_matrix);
-		shadowMVP2.concatenate(lightV_matrix);
-		shadowMVP2.concatenate(m_matrix);
 
-		//  build the MODEL-VIEW matrix
+		m_matrix.setToIdentity();
+		m_matrix.translate(0,0,0);
+		m_matrix.rotateX(20.0f);
+
+
 		mv_matrix.setToIdentity();
 		mv_matrix.concatenate(v_matrix);
 		mv_matrix.concatenate(m_matrix);
 
+		installLights(rendering_program3, v_matrix, drawable);
+
+
+		mv_matrix.setToIdentity();
+		mv_matrix.concatenate(v_matrix);
+		mv_matrix.concatenate(m_matrix);
 		//  put the MV and PROJ matrices into the corresponding uniforms
 		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
 		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
 		gl.glUniformMatrix4fv(n_location, 1, false, (mv_matrix.inverse()).transpose().getFloatValues(), 0);
-		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP2.getFloatValues(), 0);
 
-		// set up vertices buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[40]);
-		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(0);
-
-		// set up normals buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[41]);
-		gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(1);
-
-		// set up texture buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[42]);
-		gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(2);
-
-		gl.glEnable(GL_CULL_FACE);
-		gl.glFrontFace(GL_CCW);
-		gl.glEnable(GL_DEPTH_TEST);
-		gl.glDepthFunc(GL_LEQUAL);
-
-		gl.glActiveTexture(GL_TEXTURE1);
-		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
-		gl.glGenerateMipmap(GL_TEXTURE_2D);
-		gl.glActiveTexture(GL_TEXTURE2);
-		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
-		gl.glGenerateMipmap(GL_TEXTURE_2D);
-		gl.glActiveTexture(GL_TEXTURE3);
-		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
-		gl.glGenerateMipmap(GL_TEXTURE_2D);
-
-
+		gl.glActiveTexture(gl.GL_TEXTURE0);
+		gl.glBindTexture(gl.GL_TEXTURE_2D, textureID0);
+		gl.glActiveTexture(gl.GL_TEXTURE1);
+		gl.glBindTexture(gl.GL_TEXTURE_2D, textureID1);
+		gl.glActiveTexture(gl.GL_TEXTURE2);
+		gl.glBindTexture(gl.GL_TEXTURE_2D, textureID2);
 
 		gl.glClear(GL_DEPTH_BUFFER_BIT);
 		gl.glEnable(GL_DEPTH_TEST);
@@ -765,73 +736,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	}
 
 	//-----------------
-	private void createShaderPrograms(GLAutoDrawable drawable) {
-		int[] vertCompiled = new int[1];
-		int[] fragCompiled = new int[1];
-		int[] linked = new int[1];
-		int[] lengths;
-		GL4 gl = (GL4) drawable.getGL();
 
-		vBlinn1ShaderSource = util.readShaderSource("shaders/blinnVert1.glsl");
-		vBlinn2ShaderSource = util.readShaderSource("shaders/blinnVert2.glsl");
-		fBlinn2ShaderSource = util.readShaderSource("shaders/blinnFrag2.glsl");
-		tcshaderSource = util.readShaderSource("shaders/tessC.glsl");
-		teshaderSource = util.readShaderSource("shaders/tessE.glsl");
-
-		int vertexShader1 = gl.glCreateShader(GL4.GL_VERTEX_SHADER);
-		int vertexShader2 = gl.glCreateShader(GL4.GL_VERTEX_SHADER);
-		int fragmentShader2 = gl.glCreateShader(GL4.GL_FRAGMENT_SHADER);
-		int tcShader = gl.glCreateShader(GL4.GL_TESS_CONTROL_SHADER);
-		int teShader = gl.glCreateShader(GL4.GL_TESS_EVALUATION_SHADER);
-
-
-		System.out.println("\nLoading shader source into shader objects");
-		lengths = new int[vBlinn1ShaderSource.length];
-		for (int i = 0; i < lengths.length; i++)
-		{	lengths[i] = vBlinn1ShaderSource[i].length(); }
-		gl.glShaderSource(vertexShader1, vBlinn1ShaderSource.length, vBlinn1ShaderSource, lengths, 0);
-
-		lengths = new int[vBlinn2ShaderSource.length];
-		for (int i = 0; i < lengths.length; i++)
-		{	lengths[i] = vBlinn2ShaderSource[i].length(); }
-		gl.glShaderSource(vertexShader2, vBlinn2ShaderSource.length, vBlinn2ShaderSource, lengths, 0);
-
-		lengths = new int[fBlinn2ShaderSource.length];
-		for (int i = 0; i < lengths.length; i++)
-		{	lengths[i] = fBlinn2ShaderSource[i].length(); }
-		gl.glShaderSource(fragmentShader2, fBlinn2ShaderSource.length, fBlinn2ShaderSource, lengths, 0);
-
-		lengths = new int[tcshaderSource.length];
-		for (int i = 0; i < lengths.length; i++)
-		{	lengths[i] = tcshaderSource[i].length();
-		}
-		gl.glShaderSource(tcShader, tcshaderSource.length, tcshaderSource, lengths, 0);
-
-		lengths = new int[teshaderSource.length];
-		for (int i = 0; i < lengths.length; i++)
-		{	lengths[i] = teshaderSource[i].length();
-		}
-		gl.glShaderSource(teShader, teshaderSource.length, teshaderSource, lengths, 0);
-
-		gl.glCompileShader(vertexShader1);
-		gl.glCompileShader(vertexShader2);
-		gl.glCompileShader(fragmentShader2);
-		gl.glCompileShader(tcShader);
-		gl.glCompileShader(teShader);
-
-		rendering_program1 = gl.glCreateProgram();
-		rendering_program2 = gl.glCreateProgram();
-
-		gl.glAttachShader(rendering_program1, vertexShader1);
-		gl.glAttachShader(rendering_program2, vertexShader2);
-		gl.glAttachShader(rendering_program2, fragmentShader2);
-		gl.glAttachShader(rendering_program2, tcShader);
-		gl.glAttachShader(rendering_program2, teShader);
-
-
-		gl.glLinkProgram(rendering_program1);
-		gl.glLinkProgram(rendering_program2);
-	}
 	private Matrix3D perspective(float fovy, float aspect, float n, float f) {
 		float q = 1.0f / ((float) Math.tan(Math.toRadians(0.5f * fovy)));
 		float A = q / aspect;
