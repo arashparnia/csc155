@@ -21,7 +21,7 @@ import utilities.*;
 public class Asst4 extends JFrame implements GLEventListener, ActionListener, MouseListener,MouseWheelListener,MouseMotionListener, KeyListener{
 
 	graphicslib3D.Material thisMaterial;
-	private String[] vBlinn1ShaderSource, vBlinn2ShaderSource, fBlinn2ShaderSource;
+	private String[] vBlinn1ShaderSource, vBlinn2ShaderSource, fBlinn2ShaderSource,tcshaderSource,teshaderSource;
 	private GLCanvas myCanvas;
 	private int rendering_program1, rendering_program2;
 	private int mv_location, proj_location, vertexLoc, n_location,shadow_location;
@@ -89,7 +89,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private Vector3D xyz = new Vector3D(0,0,0);
 	//------------------------------------------------------------------------------------------TEXTURE
 	private TextureReader tr = new TextureReader();
-	private  int hotrockTexture,lavaTexture,grassTexture,tigerTexture,rockTexture,waterTexture;
+	private  int grassTexture,tigerTexture,rockTexture,waterTexture,heightTexture,normalTexture;
 	//-------------------------------------------------------------------------------------------MATERIALS
 	private float[] rockambient = {0.0f,0.0f,0.0f,1.0f};
 	private float[] rockdiffuse = {0.1f,0.1f,0.1f,1.0f};
@@ -173,9 +173,9 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		tigerTexture = tr.loadTexture(drawable, "textures/tigertexture.jpg");
 
 		xyz.setZ(25);
-		xyz.setY(4);
+		xyz.setY(20);
 		Matrix3D r = new Matrix3D();
-		r.rotate(5, u.normalize());
+		r.rotate(-40, u.normalize());
 		n = n.mult(r);
 		v = v.mult(r);
 	}
@@ -412,9 +412,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glActiveTexture(GL_TEXTURE1);
 		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
 		gl.glGenerateMipmap(GL_TEXTURE_2D);
-		gl.glActiveTexture(GL_TEXTURE0);
 
-		//gl.glDrawArrays(GL_TRIANGLES, 0, grassModel.getIndices().length);
+
 		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,8*8);
 
 //================================================================== draw the LIGHT PASS 2
@@ -462,6 +461,71 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
 
 
+
+		//====================================================================== tessolated path
+		int mvp_location = gl.glGetUniformLocation(rendering_program, "mvp");
+		thisMaterial = grassMaterial;
+		installLights(rendering_program2, v_matrix, drawable);
+
+		//  build the MODEL matrix
+		transformGrassModel(m_matrix);
+		//  build the shadow
+		shadowMVP2.setToIdentity();
+		shadowMVP2.concatenate(b);
+		shadowMVP2.concatenate(lightP_matrix);
+		shadowMVP2.concatenate(lightV_matrix);
+		shadowMVP2.concatenate(m_matrix);
+
+		//  build the MODEL-VIEW matrix
+		mv_matrix.setToIdentity();
+		mv_matrix.concatenate(v_matrix);
+		mv_matrix.concatenate(m_matrix);
+
+		//  put the MV and PROJ matrices into the corresponding uniforms
+		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
+		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
+		gl.glUniformMatrix4fv(n_location, 1, false, (mv_matrix.inverse()).transpose().getFloatValues(), 0);
+		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP2.getFloatValues(), 0);
+
+		// set up vertices buffer
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[40]);
+		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(0);
+
+		// set up normals buffer
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[41]);
+		gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(1);
+
+		// set up texture buffer
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[42]);
+		gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(2);
+
+		gl.glEnable(GL_CULL_FACE);
+		gl.glFrontFace(GL_CCW);
+		gl.glEnable(GL_DEPTH_TEST);
+		gl.glDepthFunc(GL_LEQUAL);
+
+		gl.glActiveTexture(GL_TEXTURE1);
+		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
+		gl.glGenerateMipmap(GL_TEXTURE_2D);
+		gl.glActiveTexture(GL_TEXTURE2);
+		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
+		gl.glGenerateMipmap(GL_TEXTURE_2D);
+		gl.glActiveTexture(GL_TEXTURE3);
+		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
+		gl.glGenerateMipmap(GL_TEXTURE_2D);
+
+
+
+		gl.glClear(GL_DEPTH_BUFFER_BIT);
+		gl.glEnable(GL_DEPTH_TEST);
+		gl.glFrontFace(GL_CCW);
+
+		gl.glPatchParameteri(GL_PATCH_VERTICES, 4);
+		gl.glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+		gl.glDrawArraysInstanced(GL_PATCHES, 0, 4, 64*64);
 	}
 
 
@@ -711,10 +775,15 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		vBlinn1ShaderSource = util.readShaderSource("shaders/blinnVert1.glsl");
 		vBlinn2ShaderSource = util.readShaderSource("shaders/blinnVert2.glsl");
 		fBlinn2ShaderSource = util.readShaderSource("shaders/blinnFrag2.glsl");
+		tcshaderSource = util.readShaderSource("shaders/tessC.glsl");
+		teshaderSource = util.readShaderSource("shaders/tessE.glsl");
 
 		int vertexShader1 = gl.glCreateShader(GL4.GL_VERTEX_SHADER);
 		int vertexShader2 = gl.glCreateShader(GL4.GL_VERTEX_SHADER);
 		int fragmentShader2 = gl.glCreateShader(GL4.GL_FRAGMENT_SHADER);
+		int tcShader = gl.glCreateShader(GL4.GL_TESS_CONTROL_SHADER);
+		int teShader = gl.glCreateShader(GL4.GL_TESS_EVALUATION_SHADER);
+
 
 		System.out.println("\nLoading shader source into shader objects");
 		lengths = new int[vBlinn1ShaderSource.length];
@@ -732,9 +801,23 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		{	lengths[i] = fBlinn2ShaderSource[i].length(); }
 		gl.glShaderSource(fragmentShader2, fBlinn2ShaderSource.length, fBlinn2ShaderSource, lengths, 0);
 
+		lengths = new int[tcshaderSource.length];
+		for (int i = 0; i < lengths.length; i++)
+		{	lengths[i] = tcshaderSource[i].length();
+		}
+		gl.glShaderSource(tcShader, tcshaderSource.length, tcshaderSource, lengths, 0);
+
+		lengths = new int[teshaderSource.length];
+		for (int i = 0; i < lengths.length; i++)
+		{	lengths[i] = teshaderSource[i].length();
+		}
+		gl.glShaderSource(teShader, teshaderSource.length, teshaderSource, lengths, 0);
+
 		gl.glCompileShader(vertexShader1);
 		gl.glCompileShader(vertexShader2);
 		gl.glCompileShader(fragmentShader2);
+		gl.glCompileShader(tcShader);
+		gl.glCompileShader(teShader);
 
 		rendering_program1 = gl.glCreateProgram();
 		rendering_program2 = gl.glCreateProgram();
@@ -742,6 +825,9 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glAttachShader(rendering_program1, vertexShader1);
 		gl.glAttachShader(rendering_program2, vertexShader2);
 		gl.glAttachShader(rendering_program2, fragmentShader2);
+		gl.glAttachShader(rendering_program2, tcShader);
+		gl.glAttachShader(rendering_program2, teShader);
+
 
 		gl.glLinkProgram(rendering_program1);
 		gl.glLinkProgram(rendering_program2);

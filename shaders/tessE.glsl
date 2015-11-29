@@ -26,9 +26,8 @@ uniform mat4 normalMat;
 uniform mat4 shadowMVP;
 layout (binding=0) uniform sampler2DShadow shadowTex;
 layout (binding=1)  uniform sampler2D s;
-layout (binding=2) uniform sampler2D tex_color;
-layout (binding=3) uniform sampler2D tex_height;
-layout (binding=4) uniform sampler2D tex_normal;
+layout (binding=2) uniform sampler2D tex_height;
+layout (binding=3) uniform sampler2D tex_normal;
 //END UNIFORMS
 
 //OUT VARIABLES
@@ -56,6 +55,6 @@ void main (void)
 	tes_out = tc;
 	
 	/*--- light stuff----*/
-	vVertPos = (mv_matrix * p).xyz;
-	vLightDir = light.position - vVertPos;
+	//vVertPos = (mv_matrix * p).xyz;
+	//vLightDir = light.position - vVertPos;
 }
