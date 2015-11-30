@@ -3,10 +3,10 @@
 in vec2 tes_out;
 out vec4 color;
 uniform mat4 mvp;
-
-layout (binding = 0) uniform sampler2D tex_color;
-layout (binding = 1) uniform sampler2D tex_height;
-layout (binding = 2) uniform sampler2D tex_normal;
+layout (binding = 0) uniform sampler2DShadow shadowTex;
+layout (binding = 1) uniform sampler2D tex_color;
+layout (binding = 2) uniform sampler2D tex_height;
+layout (binding = 3) uniform sampler2D tex_normal;
 
 /* ---- for lighting ---- */
 in vec3 varyingVertPos;
@@ -40,6 +40,7 @@ void main(void)
 				+ light.specular * material.specular * pow(max(cosPhi,0.0), material.shininess)
 				) +
 			0.5 *
-				( texture(tex_color, tes_out)
-				);
+				( texture(tex_color, tes_out));
+
+
 }

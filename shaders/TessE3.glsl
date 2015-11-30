@@ -3,9 +3,10 @@
 layout (quads, equal_spacing,ccw) in;
 
 uniform mat4 mvp;
-layout (binding = 0) uniform sampler2D tex_color;
-layout (binding = 1) uniform sampler2D tex_height;
-layout (binding = 2) uniform sampler2D tex_normal;
+layout (binding = 0) uniform sampler2DShadow shadowTex;
+layout (binding = 1) uniform sampler2D tex_color;
+layout (binding = 2) uniform sampler2D tex_height;
+layout (binding = 3) uniform sampler2D tex_normal;
 
 /*--- light stuff----*/
 struct PositionalLight
@@ -36,7 +37,7 @@ void main (void)
 	vec4 p = mix(p2, p1, gl_TessCoord.y);
 
 	// add the height from the height map to the vertex:
-	p.y = p.y + (texture(tex_height, tc).r)/2.0;
+	p.y = p.y + (texture(tex_height, tc).r)*20;
 
 	gl_Position = mvp * p;
 	tes_out = tc;
