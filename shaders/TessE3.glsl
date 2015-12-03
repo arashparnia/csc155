@@ -39,7 +39,7 @@ void main (void)
 	// add the height from the height map to the vertex:
 	p.y = p.y + (texture(tex_height, tc).r)*20;
 
-	gl_Position = mvp * p;
+	gl_Position =  proj_matrix * mv_matrix  * p;
 	tes_out = tc;
 
 	/*--- light stuff----*/

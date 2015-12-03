@@ -37,5 +37,5 @@ void main(void)
 	tc = (vertices[gl_VertexID].xz + offs + vec2(0.5))/64.0;
 
 	// vertex locations range from -32 to +32
-	gl_Position = vertices[gl_VertexID] + vec4(float(x-32), 0.0, float(y-32), 0.0);
+	gl_Position =   (vertices[gl_VertexID] + vec4(float(x-32), 0.0, float(y-32), 0.0));
 }

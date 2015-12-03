@@ -26,7 +26,7 @@ uniform mat4 proj_matrix;
 uniform mat4 normalMat;
 uniform mat4 shadowMVP;
 layout (binding=0) uniform sampler2DShadow shadowTex;
-layout (binding=1)  uniform sampler2D s;
+layout (binding=1) uniform sampler2D s;
 //END UNIFORMS
 
 //OUT VARIABLES
