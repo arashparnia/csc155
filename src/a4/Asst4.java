@@ -22,13 +22,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 	graphicslib3D.Material thisMaterial;
 	private GLCanvas myCanvas;
-	private int rendering_program1, rendering_program2,rendering_program3;
-	private int mvp_location,mv_location, proj_location, vertexLoc, n_location,shadow_location;
+	private int rendering_program1, rendering_program2,rendering_program3,rendering_program_Texture_3D;
+	private int mvp_location,mv_location, proj_location, vertexLoc, n_location,shadow_location,d_location;
 	
 	float aspect;
 	private GLSLUtils util = new GLSLUtils();
-
-
 	// shadow stuff
 	int scSizeX, scSizeY;
 	int [] shadow_tex = new int [1];
@@ -75,7 +73,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private Vector3D xyz = new Vector3D(0,0,0);
 	//------------------------------------------------------------------------------------------TEXTURE
 	private TextureReader tr = new TextureReader();
-	private  int grassTexture,rockTexture,waterTexture,heightTexture,normalTexture,textureID0,textureID1,textureID2;
+	private  int grassTexture,rockTexture,waterTexture,heightTexture,normalTexture,textureID0,textureID1,textureID2,cloud3DTexture;
 	//-------------------------------------------------------------------------------------------MATERIALS
 	private float[] rockambient = {0.0f,0.0f,0.0f,1.0f};
 	private float[] rockdiffuse = {0.1f,0.1f,0.1f,1.0f};
@@ -112,7 +110,16 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private PositionalLight currentLight = new PositionalLight();
 	private Point3D lightLoc = new Point3D(0f,100f,0f);
 	private float[] globalAmbient = new float[] { 0.1f, 0.1f, 0.1f, 1.0f };
+	//---------------------------------------------------------------------------------------------------NOISE
+	private int noiseHeight= 200;
+	private int noiseWidth = 200;
+	private int noiseDepth = 200;
+	private double[][][] noise = new double[noiseHeight][noiseWidth][noiseDepth];
+	private Random random = new Random();
 
+	private float d=0.0f; // depth for 3rd dimension of 3D noise texture
+	private double rotAmt=0.0;
+//====================================================================================================================
 	public Asst4() {
 		setTitle("Assignment 4 CSC155");
 		Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -145,7 +152,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		rendering_program1 = sh.createShaderPrograms(drawable,"shaders/Vert1.glsl","shaders/Frag1.glsl");
 		rendering_program2 = sh.createShaderPrograms(drawable,"shaders/Vert2.glsl","shaders/Frag2.glsl");
 		rendering_program3 = sh.createShaderPrograms(drawable,"shaders/Vert3.glsl","shaders/Frag3.glsl","shaders/TessC3.glsl","shaders/TessE3.glsl");
-
+		rendering_program_Texture_3D = sh.createShaderPrograms(drawable,"shaders/Vert3D.glsl","shaders/Frag3D.glsl");
 		setupVertices(gl);
 		setupShadowBuffers(drawable);
 		b.setElementAt(0,0,0.5);b.setElementAt(0,1,0.0);b.setElementAt(0,2,0.0);b.setElementAt(0,3,0.5f);
@@ -162,9 +169,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		textureID0 = tr.loadTexture(drawable, "textures/mountainTexture.jpg");
 		textureID1 = tr.loadTexture(drawable, "textures/mh.png");
 		textureID2 = tr.loadTexture(drawable, "textures/mntn.jpg ");
+		generateNoise();
+		cloud3DTexture = loadNoiseTexture(drawable);
 
-		xyz.setZ(25);
-		xyz.setY(20);
+		xyz.setZ(55);
+		xyz.setY(100);
 		Matrix3D r = new Matrix3D();
 		r.rotate(-40, u.normalize());
 		n = n.mult(r);
@@ -218,6 +227,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glEnable(GL_POLYGON_OFFSET_FILL);	// for reducing
 		gl.glPolygonOffset(2f,  4f);			//  shadow artifacts
 
+
+
 		gl.glClear(GL_DEPTH_BUFFER_BIT); //clearing depth buffer
 
 		firstPass(drawable);
@@ -238,7 +249,10 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		heightMap(drawable);
 
+		SkyDome(drawable);
+
 		secondPass(drawable);
+
 
 
 
@@ -312,7 +326,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		mv_location = gl.glGetUniformLocation(rendering_program2, "mv_matrix");
 		proj_location = gl.glGetUniformLocation(rendering_program2, "proj_matrix");
 		n_location = gl.glGetUniformLocation(rendering_program2, "normalMat");
-		shadow_location = gl.glGetUniformLocation(rendering_program2,  "shadowMVP");
+		shadow_location = gl.glGetUniformLocation(rendering_program2, "shadowMVP");
 
 
 		//================================================================== draw the rock PASS 2
@@ -358,7 +372,6 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glActiveTexture(GL_TEXTURE1);
 		gl.glBindTexture(GL_TEXTURE_2D, rockTexture);
 		gl.glGenerateMipmap(GL_TEXTURE_2D);
-
 
 
 		gl.glEnable(GL_CULL_FACE);
@@ -418,58 +431,97 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glDepthFunc(GL_LEQUAL);
 
 		gl.glActiveTexture(GL_TEXTURE1);
-		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
+		gl.glBindTexture(GL_TEXTURE_2D, cloud3DTexture);
 		gl.glGenerateMipmap(GL_TEXTURE_2D);
 
 
-		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,16*16);
-		//================================================================== draw the LIGHT PASS
-		thisMaterial = sunMaterial;
-		installLights(rendering_program2, v_matrix, drawable);
+		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length, 16 * 16);
 
-		m_matrix.translate(currentLight.getPosition().getX(),currentLight.getPosition().getY(),currentLight.getPosition().getZ());
-		m_matrix.scale(.5,.5,.5);
+	//=========================================================================================================SKY
+	public void SkyDome(GLAutoDrawable drawable) {
+		GL4 gl = (GL4) drawable.getGL();
 
-		//shadow
-		shadowMVP2.setToIdentity();
-		shadowMVP2.concatenate(b);
-		shadowMVP2.concatenate(lightP_matrix);
-		shadowMVP2.concatenate(lightV_matrix);
-		shadowMVP2.concatenate(m_matrix);
+		gl.glUseProgram(rendering_program_Texture_3D);
 
-		//  build the MODEL-VIEW matrix
+		mv_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "mv_matrix");
+		proj_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "proj_matrix");
+		d_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "d");
+
+		m_matrix.setToIdentity();
+		m_matrix.translate(0,0,0);
+		m_matrix.scale(200,200,200);
+		rotAmt = rotAmt + 0.015;
+		d = d + 0.000025f; if (d>=1.0f) d=0.0f;
+		m_matrix.rotateY(rotAmt);
+
+
 		mv_matrix.setToIdentity();
 		mv_matrix.concatenate(v_matrix);
 		mv_matrix.concatenate(m_matrix);
 
-
-
-		//  put the MV and PROJ matrices into the corresponding uniforms
 		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
 		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
-		gl.glUniformMatrix4fv(n_location, 1, false, (mv_matrix.inverse()).transpose().getFloatValues(), 0);
-		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP2.getFloatValues(), 0);
-
+		gl.glUniform1f(d_location, d);
 
 		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0]);
 		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
 		gl.glEnableVertexAttribArray(0);
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[1]);
-		gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(1);
+
 		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2]);
-		gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(2);
+		gl.glVertexAttribPointer(1, 2, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(1);
+
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		gl.glBindTexture(gl.GL_TEXTURE_3D, cloud3DTexture);
 
 		gl.glEnable(GL_CULL_FACE);
-		gl.glFrontFace(GL_CCW);
+		gl.glFrontFace(GL_CW);
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 
 		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
 
+		GL4 gl = (GL4) drawable.getGL();
+
+		gl.glUseProgram(rendering_program_Texture_3D);
+
+		mv_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "mv_matrix");
+		proj_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "proj_matrix");
+		d_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "d");
+
+		m_matrix.setToIdentity();
+		m_matrix.translate(lightLoc.getX(),lightLoc.getY(),lightLoc.getZ());
+		m_matrix.scale(1,1,1);
+		rotAmt = rotAmt + 0.015;
+		d = d + 0.000025f; if (d>=1.0f) d=0.0f;
+		m_matrix.rotateY(rotAmt);
 
 
+		mv_matrix.setToIdentity();
+		mv_matrix.concatenate(v_matrix);
+		mv_matrix.concatenate(m_matrix);
+
+		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
+		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
+		gl.glUniform1f(d_location, d);
+
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0]);
+		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(0);
+
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2]);
+		gl.glVertexAttribPointer(1, 2, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(1);
+
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		gl.glBindTexture(gl.GL_TEXTURE_3D, cloud3DTexture);
+
+		gl.glEnable(GL_CULL_FACE);
+		gl.glFrontFace(GL_CW);
+		gl.glEnable(GL_DEPTH_TEST);
+		gl.glDepthFunc(GL_LEQUAL);
+
+		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
 	}
 
 	public void heightMap(GLAutoDrawable drawable) {
@@ -802,6 +854,99 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		l.setElementAt(3,3,1.0f);
 		return(l.transpose());
 	}
+	//=======================================================================================================NOISE
+
+	private void fillDataArray(byte data[])
+	{ for (int i=0; i<noiseHeight; i++)
+	{ for (int j=0; j<noiseWidth; j++)
+	{ for (int k=0; k<noiseDepth; k++)
+	{ // clouds (same as above with blue hue)
+		float hue = 240/360.0f;
+		float sat = (float) turbulence(i,j,k,32) / 256.0f;
+		float bri = 100/100.0f;
+		int rgb = Color.HSBtoRGB(hue,sat,bri);
+		Color c = new Color(rgb);
+		data[i*(noiseWidth*noiseHeight*4)+j*(noiseHeight*4)+k*4+0] = (byte) c.getRed();
+		data[i*(noiseWidth*noiseHeight*4)+j*(noiseHeight*4)+k*4+1] = (byte) c.getGreen();
+		data[i*(noiseWidth*noiseHeight*4)+j*(noiseHeight*4)+k*4+2] = (byte) c.getBlue();
+		data[i*(noiseWidth*noiseHeight*4)+j*(noiseHeight*4)+k*4+3] = (byte) 0;
+	} } } }
+
+	private int loadNoiseTexture(GLAutoDrawable drawable)
+	{	GL4 gl = (GL4) drawable.getGL();
+
+
+		byte[] data = new byte[noiseHeight*noiseWidth*noiseDepth*4];
+
+		ByteBuffer bb = ByteBuffer.allocate(noiseHeight*noiseWidth*noiseDepth*4);
+
+		fillDataArray(data);
+
+		bb = ByteBuffer.wrap(data);
+
+		int[] textureIDs = new int[1];
+		gl.glGenTextures(1, textureIDs, 0);
+		int textureID = textureIDs[0];
+
+		gl.glBindTexture(gl.GL_TEXTURE_3D, textureID);
+
+		gl.glTexStorage3D(gl.GL_TEXTURE_3D, 1, GL_RGBA8, noiseWidth, noiseHeight, noiseDepth);
+		gl.glTexSubImage3D(gl.GL_TEXTURE_3D, 0, 0, 0, 0,
+				noiseWidth, noiseHeight, noiseDepth, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8_REV, bb);
+
+		gl.glTexParameteri(gl.GL_TEXTURE_3D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_LINEAR);
+		return textureID;
+	}
+
+	void generateNoise()
+	{	for (int x=0; x<noiseHeight; x++)
+	{	for (int y=0; y<noiseWidth; y++)
+	{	for (int z=0; z<noiseDepth; z++)
+	{	noise[x][y][z] = random.nextDouble();
+	}	}	}	}
+
+	double smoothNoise(double x1, double y1, double z1)
+	{	//get fractional part of x, y, and z
+		double fractX = x1 - (int) x1;
+		double fractY = y1 - (int) y1;
+		double fractZ = z1 - (int) z1;
+
+		//neighbor values
+		int x2 = ((int)x1 + noiseWidth - 1) % noiseWidth;
+		int y2 = ((int)y1 + noiseHeight- 1) % noiseHeight;
+		int z2 = ((int)z1 + noiseDepth - 1) % noiseDepth;
+
+		//smooth the noise by interpolating
+		double value = 0.0;
+		value += fractX     * fractY     * fractZ     * noise[(int)x1][(int)y1][(int)z1];
+		value += fractX     * (1-fractY) * fractZ     * noise[(int)x1][(int)y2][(int)z1];
+		value += (1-fractX) * fractY     * fractZ     * noise[(int)x2][(int)y1][(int)z1];
+		value += (1-fractX) * (1-fractY) * fractZ     * noise[(int)x2][(int)y2][(int)z1];
+
+		value += fractX     * fractY     * (1-fractZ) * noise[(int)x1][(int)y1][(int)z2];
+		value += fractX     * (1-fractY) * (1-fractZ) * noise[(int)x1][(int)y2][(int)z2];
+		value += (1-fractX) * fractY     * (1-fractZ) * noise[(int)x2][(int)y1][(int)z2];
+		value += (1-fractX) * (1-fractY) * (1-fractZ) * noise[(int)x2][(int)y2][(int)z2];
+
+		return value;
+	}
+
+	private double turbulence(double x, double y, double z, double size)
+	{	double value = 0.0, initialSize = size;
+		while(size >= 0.9)
+		{	value = value + smoothNoise(x/size, y/size, z/size) * size;
+			size = size / 2.0;
+		}
+		value = value/initialSize;
+		value = 256.0 * logistic(value * 128.0 - 120.0);
+		return value;
+	}
+
+	private double logistic(double x)
+	{	double k = 0.2;
+		return (1.0/(1.0+Math.pow(2.718,-k*x)));
+	}
+
 	// ------------------------------------------------------------------------------------- CONTROLS
 	@Override public void mouseWheelMoved(MouseWheelEvent e) {
 		if (e.getUnitsToScroll() < 0)

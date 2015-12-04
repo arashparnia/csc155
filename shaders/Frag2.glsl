@@ -23,6 +23,8 @@ uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
 uniform mat4 normalMat;
 uniform mat4 shadowMVP;
+uniform float d;
+
 layout (binding=0) uniform sampler2DShadow shadowTex;
 layout (binding=1)  uniform sampler2D s;
 //END UNIFORMS
@@ -50,5 +52,8 @@ void main(void){
 				* pow(max(dot(H,N),0.0),material.shininess*3.0);
 	}
 
-	 fragColor = fragColor * 0.8  +  texture2D(s,tc) * 0.2 ;
+
+    fragColor = fragColor * 0.8  +  texture(s,tc) * 0.2 ;
+
+
 }
