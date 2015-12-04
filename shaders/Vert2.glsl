@@ -37,9 +37,9 @@ out vec2 tc;
 void main(void){
  tc = texPos;
 	if (gl_InstanceID > 0){
-            int x = (gl_InstanceID & 15)*4;
+            int x = (gl_InstanceID & 63)*4;
             int y = 0;
-            int z = (gl_InstanceID >> 4)*4;
+            int z = (gl_InstanceID >> 6)*4;
             vec3 pos = vertPos + vec3(x,y,z);
         //output the vertex position to the rasterizer for interpolation
         vVertPos = (mv_matrix * vec4(pos,1.0)).xyz;

@@ -34,6 +34,9 @@ void main(void)
 	float cosTheta = dot(L,N);
 	float cosPhi = dot(V,R);
 
+    float inShadow = 1;//textureProj(shadowTex, shadow_coord);
+
+    if (inShadow != 0.0){
 	color = 0.5 *
 				( globalAmbient * material.ambient  +  light.ambient * material.ambient
 				+ light.diffuse * material.diffuse * max(cosTheta,0.0)
@@ -41,6 +44,14 @@ void main(void)
 				) +
 			0.5 *
 				( texture(tex_color, tes_out));
+
+   } else {
+
+   color =	0.5 * ( texture(tex_color, tes_out));
+
+   }
+
+
 
 
 }

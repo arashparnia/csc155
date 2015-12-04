@@ -51,10 +51,10 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 	//----------------------------------------------------------------------------------------OBJECTS
 	private Cube cube = new Cube();
-	private shapes.Sphere mySphere = new shapes.Sphere(48);
+	private shapes.HalfSphere mySphere = new shapes.HalfSphere(48);
 	private shapes.Astroid rock = new shapes.Astroid(100);
 	private ImportedModel grassModel = new ImportedModel("Grass_02.obj");
-	//private ImportedModel myModel = new ImportedModel("Tiger.obj");
+	private ImportedModel myModel = new ImportedModel("Tiger.obj");
 	//------------------------------------------------------------------------------------------MATRICIES
 	private Matrix3D m_matrix = new Matrix3D();
 	private Matrix3D v_matrix = new Matrix3D();
@@ -105,10 +105,16 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private float[] wateremission = {1.0f,1.0f,1.0f,1.0f};
 	private float watershininess = 50f;
 	graphicslib3D.Material waterMaterial = new Material("water",waterambient,waterdiffuse,waterspecular,wateremission,watershininess);
+	private float[] nightambient = {0,0,0,1.0f};
+	private float[] nightdiffuse = {0,0,0,1.0f};
+	private float[] nightspecular =  {0,0,0,1.0f};
+	private float[] nightemission = {0,0,0,1.0f};
+	private float nightshininess = 0f;
+	graphicslib3D.Material nightMaterial = new Material("night",nightambient,nightdiffuse,nightspecular,nightemission,nightshininess);
 	//-------------------------------------------------------------------------------------------------LIGHT
 	private int lights = 1;
 	private PositionalLight currentLight = new PositionalLight();
-	private Point3D lightLoc = new Point3D(0f,100f,0f);
+	private Point3D lightLoc = new Point3D(10f,50f,10f);
 	private float[] globalAmbient = new float[] { 0.1f, 0.1f, 0.1f, 1.0f };
 	//---------------------------------------------------------------------------------------------------NOISE
 	private int noiseHeight= 200;
@@ -182,17 +188,22 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private void transformRock(Matrix3D m){
 		m.setToIdentity();
 		m.translate(0,0,0);
-		m.scale(3,50,3);
+		m.scale(5,100,5);
 	}
 	private void transformGrass(Matrix3D m){
 		m.setToIdentity();
-		m.translate(-32,0,-32);
-		m.scale(1,1,1);
+		m.translate(-500,0,-500);
+		m.scale(4,2,4);
 	}
 	private void transformHeightMap(Matrix3D m) {
 		m.setToIdentity();
 		m_matrix.translate(0, 0, 0);
-		m_matrix.scale(2, 2, 2);
+		m_matrix.scale(20,10,20);
+	}
+	private void transformGround(Matrix3D m) {
+		m.setToIdentity();
+		m_matrix.translate(0, -2, 0);
+		m_matrix.scale(500,0.1,500);
 	}
 	public void display(GLAutoDrawable drawable) {
 		GL4 gl = (GL4) drawable.getGL();
@@ -200,9 +211,12 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		FloatBuffer background = FloatBuffer.allocate(4);
 		gl.glClearBufferfv(gl.GL_COLOR, 0, background);
 
-		double amt = (double)(System.currentTimeMillis()%36000)/1000.0;
-		lightLoc.setX(Math.cos(amt)*100);
-		lightLoc.setZ(Math.sin(amt)*100);
+		double amt = (double)(System.currentTimeMillis()%36000)/10000.0;
+		lightLoc.setX(Math.cos(amt)*600);
+		lightLoc.setY(Math.sin(amt)*600);
+		lightLoc.setZ(50);
+
+		if (lightLoc.getY() < 0 )lights=0;else lights=1;
 
 //		      int min = -1; int max = 1;
 //        lightLoc.setX(lightLoc.getX()+ new Random().nextInt((max - min) + 1) + min);
@@ -211,7 +225,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		currentLight.setPosition(lightLoc);
 		aspect = myCanvas.getWidth() / myCanvas.getHeight();
-		proj_matrix = perspective(50.0f, aspect, 0.1f, 1000.0f);
+		proj_matrix = perspective(60.0f, aspect, 0.1f, 10000.0f);
 
 
 		float depthClearVal[] = new float[1]; depthClearVal[0] = 1.0f;
@@ -268,7 +282,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		lightV_matrix.setToIdentity();lightP_matrix.setToIdentity();
 		lightV_matrix = lookAt(currentLight.getPosition(), new Point3D(0.0, 0.0, 0.0), new Vector3D(0.0, 1.0, 0.0));	// vector from light to origin
-		lightP_matrix = perspective(50.0f, aspect, 0.1f, 1000.0f);
+		lightP_matrix = perspective(60.0f, aspect, 0.1f, 10000.0f);
 
 		//=================================================================draw the rock PASS 1
 
@@ -316,7 +330,30 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 
-		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,16*16);
+		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length,64*64);
+
+
+		//======================================================GROUND
+	    transformGround(m_matrix);
+
+	    shadowMVP1.setToIdentity();
+	    shadowMVP1.concatenate(lightP_matrix);
+	    shadowMVP1.concatenate(lightV_matrix);
+	    shadowMVP1.concatenate(m_matrix);
+	    gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP1.getFloatValues(), 0);
+
+	    // set up vertices buffer
+	    gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[100]);
+	    gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+	    gl.glEnableVertexAttribArray(0);
+
+	    gl.glEnable(GL_CULL_FACE);
+	    gl.glFrontFace(GL_CCW);
+	    gl.glEnable(GL_DEPTH_TEST);
+	    gl.glDepthFunc(GL_LEQUAL);
+
+	    gl.glDrawArrays(GL_TRIANGLES, 0, cube.getFValues().length/3);
+
 	}
 	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ PASS 2
 	public void secondPass(GLAutoDrawable drawable) {
@@ -435,8 +472,67 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glGenerateMipmap(GL_TEXTURE_2D);
 
 
-		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length, 16 * 16);
+		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length, 64 * 64);
+		//============================================================================================GROUND PASS 2
 
+
+		thisMaterial = grassMaterial;
+		installLights(rendering_program2, v_matrix, drawable);
+
+
+		transformGround(m_matrix);
+
+
+
+		//  build the shadow
+		shadowMVP2.setToIdentity();
+		shadowMVP2.concatenate(b);
+		shadowMVP2.concatenate(lightP_matrix);
+		shadowMVP2.concatenate(lightV_matrix);
+		shadowMVP2.concatenate(m_matrix);
+
+
+		//  build the MODEL-VIEW matrix
+		mv_matrix.setToIdentity();
+		mv_matrix.concatenate(v_matrix);
+		mv_matrix.concatenate(m_matrix);
+
+
+		//  put the MV and PROJ matrices into the corresponding uniforms
+		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
+		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
+		gl.glUniformMatrix4fv(n_location, 1, false, (mv_matrix.inverse()).transpose().getFloatValues(), 0);
+		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP2.getFloatValues(), 0);
+
+		// set up vertices buffer
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[100]);
+		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(0);
+
+		// set up normals buffer
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[101]);
+		gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(1);
+
+		// set up texture buffer
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[102]);
+		gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(2);
+
+		gl.glEnable(GL_CULL_FACE);
+		gl.glFrontFace(GL_CCW);
+		gl.glEnable(GL_DEPTH_TEST);
+		gl.glDepthFunc(GL_LEQUAL);
+
+		gl.glActiveTexture(GL_TEXTURE1);
+		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
+		gl.glGenerateMipmap(GL_TEXTURE_2D);
+
+
+		gl.glDrawArrays(GL_TRIANGLES, 0, cube.getFValues().length/3);
+
+
+	}
 	//=========================================================================================================SKY
 	public void SkyDome(GLAutoDrawable drawable) {
 		GL4 gl = (GL4) drawable.getGL();
@@ -448,10 +544,10 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		d_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "d");
 
 		m_matrix.setToIdentity();
-		m_matrix.translate(0,0,0);
-		m_matrix.scale(200,200,200);
-		rotAmt = rotAmt + 0.015;
-		d = d + 0.000025f; if (d>=1.0f) d=0.0f;
+		m_matrix.translate(0,-5,0);
+		m_matrix.scale(500,500,500);
+		rotAmt = rotAmt + 0.1;
+		d = d + 0.00025f; if (d>=1.0f) d=0.0f;
 		m_matrix.rotateY(rotAmt);
 
 
@@ -476,22 +572,19 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		gl.glEnable(GL_CULL_FACE);
 		gl.glFrontFace(GL_CW);
+		//gl.glDisable(GL_DEPTH_TEST);
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 
 		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
 
-		GL4 gl = (GL4) drawable.getGL();
 
-		gl.glUseProgram(rendering_program_Texture_3D);
 
-		mv_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "mv_matrix");
-		proj_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "proj_matrix");
-		d_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "d");
+
 
 		m_matrix.setToIdentity();
 		m_matrix.translate(lightLoc.getX(),lightLoc.getY(),lightLoc.getZ());
-		m_matrix.scale(1,1,1);
+		m_matrix.scale(.1,.1,.1);
 		rotAmt = rotAmt + 0.015;
 		d = d + 0.000025f; if (d>=1.0f) d=0.0f;
 		m_matrix.rotateY(rotAmt);
@@ -517,7 +610,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glBindTexture(gl.GL_TEXTURE_3D, cloud3DTexture);
 
 		gl.glEnable(GL_CULL_FACE);
-		gl.glFrontFace(GL_CW);
+		gl.glFrontFace(GL_CCW);
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 
@@ -693,38 +786,38 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		FloatBuffer texBuf = FloatBuffer.wrap(tvalues);
 		gl.glBufferData(GL.GL_ARRAY_BUFFER, texBuf.limit() * 4, texBuf, GL.GL_STATIC_DRAW);
 	}//20,21,22
-//	private void setupVerticesMyModel(GL4 gl){ // imported model
-//		Vertex3D[] vertices = myModel.getVertices();
-//		int[] indices = myModel.getIndices();
-//		float[] fvalues = new float[indices.length * 3];
-//		float[] tvalues = new float[indices.length * 2];
-//		float[] nvalues = new float[indices.length * 3];
-//		for (int i = 0; i < indices.length; i++)
-//		{
-//			fvalues[i * 3] = (float) (vertices[indices[i]]).getX();
-//			fvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getY();
-//			fvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getZ();
-//			tvalues[i * 2] = (float) (vertices[indices[i]]).getS();
-//			tvalues[i * 2 + 1] = (float) (vertices[indices[i]]).getT();
-//			nvalues[i * 3] = (float) (vertices[indices[i]]).getNormalX();
-//			nvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getNormalY();
-//			nvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getNormalZ();
-//		}
-//
-//		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[30]);
-//		FloatBuffer vertBuf = FloatBuffer.wrap(fvalues);
-//		gl.glBufferData(GL.GL_ARRAY_BUFFER, vertBuf.limit() * 4, vertBuf, GL.GL_STATIC_DRAW);
-//
-//		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[31]);
-//		FloatBuffer norBuf = FloatBuffer.wrap(nvalues);
-//		gl.glBufferData(GL.GL_ARRAY_BUFFER, norBuf.limit() * 4, norBuf, GL.GL_STATIC_DRAW);
-//
-//		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[32]);
-//		FloatBuffer texBuf = FloatBuffer.wrap(tvalues);
-//		gl.glBufferData(GL.GL_ARRAY_BUFFER, texBuf.limit() * 4, texBuf, GL.GL_STATIC_DRAW);
-//
-//
-//	}//30,31,32
+	private void setupVerticesMyModel(GL4 gl){ // imported model
+		Vertex3D[] vertices = myModel.getVertices();
+		int[] indices = myModel.getIndices();
+		float[] fvalues = new float[indices.length * 3];
+		float[] tvalues = new float[indices.length * 2];
+		float[] nvalues = new float[indices.length * 3];
+		for (int i = 0; i < indices.length; i++)
+		{
+			fvalues[i * 3] = (float) (vertices[indices[i]]).getX();
+			fvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getY();
+			fvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getZ();
+			tvalues[i * 2] = (float) (vertices[indices[i]]).getS();
+			tvalues[i * 2 + 1] = (float) (vertices[indices[i]]).getT();
+			nvalues[i * 3] = (float) (vertices[indices[i]]).getNormalX();
+			nvalues[i * 3 + 1] = (float) (vertices[indices[i]]).getNormalY();
+			nvalues[i * 3 + 2] = (float) (vertices[indices[i]]).getNormalZ();
+		}
+
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[30]);
+		FloatBuffer vertBuf = FloatBuffer.wrap(fvalues);
+		gl.glBufferData(GL.GL_ARRAY_BUFFER, vertBuf.limit() * 4, vertBuf, GL.GL_STATIC_DRAW);
+
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[31]);
+		FloatBuffer norBuf = FloatBuffer.wrap(nvalues);
+		gl.glBufferData(GL.GL_ARRAY_BUFFER, norBuf.limit() * 4, norBuf, GL.GL_STATIC_DRAW);
+
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[32]);
+		FloatBuffer texBuf = FloatBuffer.wrap(tvalues);
+		gl.glBufferData(GL.GL_ARRAY_BUFFER, texBuf.limit() * 4, texBuf, GL.GL_STATIC_DRAW);
+
+
+	}//30,31,32
 	private void setupVerticesGrassModel(GL4 gl) { // imported model
 		Vertex3D[] vertices = grassModel.getVertices();
 		int[] indices = grassModel.getIndices();
@@ -765,7 +858,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		setupVerticesRock(gl);
 		//setupVerticesMyModel(gl);
 		setupVerticesGrassModel(gl);
-		//setupVerteciesCube(gl);
+		setupVerteciesCube(gl);
 	}
 	// -----------------------------
 	public void reshape(GLAutoDrawable drawable, int x, int y, int width, int height)
@@ -777,6 +870,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		Material currentMaterial = new Material();
 		currentMaterial = thisMaterial;
+		if (lights==0) currentMaterial = nightMaterial;
 
 		Point3D lightP = currentLight.getPosition();
 		Point3D lightPv = lightP.mult(v_matrix);
