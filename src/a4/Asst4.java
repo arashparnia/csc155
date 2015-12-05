@@ -578,9 +578,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
 
-
-
-
+		//---------------------------------------------------------------------------LIGHT
 
 		m_matrix.setToIdentity();
 		m_matrix.translate(lightLoc.getX(),lightLoc.getY(),lightLoc.getZ());
@@ -615,6 +613,38 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glDepthFunc(GL_LEQUAL);
 
 		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
+		//------------------------------------------------------------------------------------------lake
+
+		m_matrix.setToIdentity();
+		m_matrix.translate(-50,0,-20);
+		m_matrix.scale(10,5,10);
+
+		mv_matrix.setToIdentity();
+		mv_matrix.concatenate(v_matrix);
+		mv_matrix.concatenate(m_matrix);
+
+		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
+		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
+		gl.glUniform1f(d_location, d);
+
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
+		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(0);
+
+		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[22]);
+		gl.glVertexAttribPointer(1, 2, GL.GL_FLOAT, false, 0, 0);
+		gl.glEnableVertexAttribArray(2);
+
+		gl.glActiveTexture(GL.GL_TEXTURE0);
+		gl.glBindTexture(gl.GL_TEXTURE_3D, cloud3DTexture);
+
+		gl.glEnable(GL_CULL_FACE);
+		gl.glFrontFace(GL_CCW);
+		gl.glEnable(GL_DEPTH_TEST);
+		gl.glDepthFunc(GL_LEQUAL);
+
+		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
+
 	}
 
 	public void heightMap(GLAutoDrawable drawable) {
