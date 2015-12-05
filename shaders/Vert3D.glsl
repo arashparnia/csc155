@@ -1,8 +1,11 @@
 #version 430
 
 layout (location = 0) in vec3 position;
-layout (location = 1) in vec2 tex_coord;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 tex_coord;
+
 out vec2 tc;
+
 
 layout (binding=0) uniform sampler3D s;
 uniform mat4 mv_matrix;

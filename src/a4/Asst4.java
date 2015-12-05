@@ -192,8 +192,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	}
 	private void transformGrass(Matrix3D m){
 		m.setToIdentity();
-		m.translate(-500,0,-500);
-		m.scale(4,2,4);
+		m.translate(-600,0,-600);
+		m.scale(4,4,4);
 	}
 	private void transformHeightMap(Matrix3D m) {
 		m.setToIdentity();
@@ -202,8 +202,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	}
 	private void transformGround(Matrix3D m) {
 		m.setToIdentity();
-		m_matrix.translate(0, -2, 0);
-		m_matrix.scale(500,0.1,500);
+		m_matrix.translate(0, 0, 0);
+		m_matrix.scale(5000,1,5000);
 	}
 	public void display(GLAutoDrawable drawable) {
 		GL4 gl = (GL4) drawable.getGL();
@@ -212,9 +212,9 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glClearBufferfv(gl.GL_COLOR, 0, background);
 
 		double amt = (double)(System.currentTimeMillis()%36000)/10000.0;
-		lightLoc.setX(Math.cos(amt)*600);
-		lightLoc.setY(Math.sin(amt)*600);
-		lightLoc.setZ(50);
+		lightLoc.setX(Math.cos(amt)*1000);
+		lightLoc.setY(Math.sin(amt)*1000);
+		lightLoc.setZ(150);
 
 		if (lightLoc.getY() < 0 )lights=0;else lights=1;
 
@@ -225,7 +225,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		currentLight.setPosition(lightLoc);
 		aspect = myCanvas.getWidth() / myCanvas.getHeight();
-		proj_matrix = perspective(60.0f, aspect, 0.1f, 10000.0f);
+		proj_matrix = perspective(90.0f, aspect, 0.1f, 10000.0f);
 
 
 		float depthClearVal[] = new float[1]; depthClearVal[0] = 1.0f;
@@ -282,7 +282,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		lightV_matrix.setToIdentity();lightP_matrix.setToIdentity();
 		lightV_matrix = lookAt(currentLight.getPosition(), new Point3D(0.0, 0.0, 0.0), new Vector3D(0.0, 1.0, 0.0));	// vector from light to origin
-		lightP_matrix = perspective(60.0f, aspect, 0.1f, 10000.0f);
+		lightP_matrix = perspective(90.0f, aspect, 0.1f, 10000.0f);
 
 		//=================================================================draw the rock PASS 1
 
@@ -520,7 +520,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glEnableVertexAttribArray(2);
 
 		gl.glEnable(GL_CULL_FACE);
-		gl.glFrontFace(GL_CCW);
+		gl.glFrontFace(GL_CW);
 		gl.glEnable(GL_DEPTH_TEST);
 		gl.glDepthFunc(GL_LEQUAL);
 
@@ -545,9 +545,9 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		m_matrix.setToIdentity();
 		m_matrix.translate(0,-5,0);
-		m_matrix.scale(500,500,500);
-		rotAmt = rotAmt + 0.1;
-		d = d + 0.00025f; if (d>=1.0f) d=0.0f;
+		m_matrix.scale(1000,1000,1000);
+		rotAmt = rotAmt + 0.5;
+		d = d + 0.0025f; if (d>=1.0f) d=0.0f;
 		m_matrix.rotateY(rotAmt);
 
 
@@ -559,22 +559,29 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
 		gl.glUniform1f(d_location, d);
 
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0]);
-		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(0);
+        // set up vertices buffer
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0]);
+        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(0);
 
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2]);
-		gl.glVertexAttribPointer(1, 2, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(1);
+        // set up normals buffer
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[1]);
+        gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(1);
+
+        // set up texture buffer
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2]);
+        gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(2);
 
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		gl.glBindTexture(gl.GL_TEXTURE_3D, cloud3DTexture);
 
 		gl.glEnable(GL_CULL_FACE);
 		gl.glFrontFace(GL_CW);
-		//gl.glDisable(GL_DEPTH_TEST);
+		gl.glDisable(GL_DEPTH_TEST);
 		gl.glEnable(GL_DEPTH_TEST);
-		gl.glDepthFunc(GL_LEQUAL);
+		//gl.glDepthFunc(GL_LEQUAL);
 
 		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
 
@@ -596,44 +603,20 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
 		gl.glUniform1f(d_location, d);
 
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0]);
-		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(0);
+        // set up vertices buffer
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0]);
+        gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(0);
 
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2]);
-		gl.glVertexAttribPointer(1, 2, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(1);
+        // set up normals buffer
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[1]);
+        gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(1);
 
-		gl.glActiveTexture(GL.GL_TEXTURE0);
-		gl.glBindTexture(gl.GL_TEXTURE_3D, cloud3DTexture);
-
-		gl.glEnable(GL_CULL_FACE);
-		gl.glFrontFace(GL_CCW);
-		gl.glEnable(GL_DEPTH_TEST);
-		gl.glDepthFunc(GL_LEQUAL);
-
-		gl.glDrawArrays(GL_TRIANGLES, 0, mySphere.getIndices().length);
-		//------------------------------------------------------------------------------------------lake
-
-		m_matrix.setToIdentity();
-		m_matrix.translate(-50,0,-20);
-		m_matrix.scale(10,5,10);
-
-		mv_matrix.setToIdentity();
-		mv_matrix.concatenate(v_matrix);
-		mv_matrix.concatenate(m_matrix);
-
-		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
-		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
-		gl.glUniform1f(d_location, d);
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[20]);
-		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(0);
-
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[22]);
-		gl.glVertexAttribPointer(1, 2, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(2);
+        // set up texture buffer
+        gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2]);
+        gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
+        gl.glEnableVertexAttribArray(2);
 
 		gl.glActiveTexture(GL.GL_TEXTURE0);
 		gl.glBindTexture(gl.GL_TEXTURE_3D, cloud3DTexture);

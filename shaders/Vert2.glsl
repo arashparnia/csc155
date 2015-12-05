@@ -38,7 +38,7 @@ void main(void){
  tc = texPos;
 	if (gl_InstanceID > 0){
             int x = (gl_InstanceID & 63)*4;
-            int y = 0;
+            float y = 1+(sin(gl_InstanceID*gl_InstanceID) + cos(gl_InstanceID));
             int z = (gl_InstanceID >> 6)*4;
             vec3 pos = vertPos + vec3(x,y,z);
         //output the vertex position to the rasterizer for interpolation
