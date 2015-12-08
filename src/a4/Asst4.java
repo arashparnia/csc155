@@ -233,17 +233,18 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		FloatBuffer background = FloatBuffer.allocate(4);
 		gl.glClearBufferfv(gl.GL_COLOR, 0, background);
 
-		double amt = (double)(System.currentTimeMillis()%36000)/10000.0;
-		lightLoc.setX(Math.cos(amt)*300);
-		lightLoc.setY(Math.sin(amt)*300);
-		lightLoc.setZ(300);
+		double amt = (double)(System.currentTimeMillis()%360000)/10000.0;
+        System.out.println(amt);
+		lightLoc.setX(Math.cos(amt)*500);
+		lightLoc.setY(Math.sin(amt)*500);
+		lightLoc.setZ(200);
 
 		//if (lightLoc.getY() < 0 )lights=0;else lights=1;
 
-		      int min = -1; int max = 1;
-        lightLoc.setX(lightLoc.getX()+ new Random().nextInt((max - min) + 1) + min);
-        lightLoc.setY(lightLoc.getY()+ new Random().nextInt((max - min) + 1) + min);
-        lightLoc.setZ(lightLoc.getZ()+ new Random().nextInt((max - min) + 1) + min);
+//		      int min = -1; int max = 1;
+//        lightLoc.setX(lightLoc.getX()+ new Random().nextInt((max - min) + 1) + min);
+//        lightLoc.setY(lightLoc.getY()+ new Random().nextInt((max - min) + 1) + min);
+//        lightLoc.setZ(lightLoc.getZ()+ new Random().nextInt((max - min) + 1) + min);
 
 		currentLight.setPosition(lightLoc);
 		aspect = myCanvas.getWidth() / myCanvas.getHeight();
