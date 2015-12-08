@@ -25,6 +25,9 @@ uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
 uniform mat4 normalMat;
 uniform mat4 shadowMVP;
+uniform float d;
+uniform vec3 camera_loc;
+
 layout (binding=0) uniform sampler2DShadow shadowTex;
 layout (binding=1) uniform sampler2D s;
 //END UNIFORMS
@@ -33,7 +36,7 @@ layout (binding=1) uniform sampler2D s;
 out vec3 vNormal, vLightDir, vVertPos, vHalfVec;
 out vec4 shadow_coord;
 out vec2 tc;
-
+out vec3 coord;
 void main(void){
  tc = texPos;
 	if (gl_InstanceID > 0){
@@ -55,6 +58,7 @@ void main(void){
 
         shadow_coord = shadowMVP * vec4(pos,1.0);
 
+        coord = (mv_matrix*vec4(pos,1.0)).xyz; // fog
         gl_Position = proj_matrix * mv_matrix * vec4(pos,1.0);
 	}else {
 	    //output the vertex position to the rasterizer for interpolation
@@ -70,7 +74,7 @@ void main(void){
     	vHalfVec = (vLightDir-vVertPos).xyz;
 
     	shadow_coord = shadowMVP * vec4(vertPos,1.0);
-
+        coord = (mv_matrix*vec4(vertPos,1.0)).xyz; //fog
     	gl_Position = proj_matrix * mv_matrix * vec4(vertPos,1.0);
 	}
 }

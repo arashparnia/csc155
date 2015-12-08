@@ -19,13 +19,16 @@ uniform Material material;
 uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
 uniform mat4 normalMat;
+uniform mat4 shadowMVP;
+
 out vec3 varyingVertPos;
 out vec3 varyingLightDir;
 /*-----------------*/
 
 in vec2 tcs_out[];
 out vec2 tes_out;
-
+out vec3 coord;
+out vec4 shadow_coord;
 void main (void)
 {	vec2 tc1 = mix(tcs_out[0], tcs_out[1], gl_TessCoord.x);
 	vec2 tc2 = mix(tcs_out[2], tcs_out[3], gl_TessCoord.x);
@@ -39,10 +42,14 @@ void main (void)
 	// add the height from the height map to the vertex:
 	p.y = p.y + (texture(tex_height, tc).r)*20;
 
+
 	gl_Position =  proj_matrix * mv_matrix  * p;
 	tes_out = tc;
 
 	/*--- light stuff----*/
 	varyingVertPos = (mv_matrix * p).xyz;
 	varyingLightDir = light.position - varyingVertPos;
+
+  coord = (mv_matrix*p).xyz;//fog
+    shadow_coord = shadowMVP * p;//shadow
 }

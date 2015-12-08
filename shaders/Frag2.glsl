@@ -3,6 +3,7 @@
 in vec3 vNormal, vLightDir, vVertPos, vHalfVec;
 in vec4 shadow_coord;
 in vec2 tc;
+in vec3 coord;
 
 //LOCAL VARIABLES
 struct PositionalLight
@@ -24,6 +25,7 @@ uniform mat4 proj_matrix;
 uniform mat4 normalMat;
 uniform mat4 shadowMVP;
 uniform float d;
+uniform vec3 camera_loc;
 
 layout (binding=0) uniform sampler2DShadow shadowTex;
 layout (binding=1)  uniform sampler2D s;
@@ -34,6 +36,14 @@ out vec4 fragColor;
 //END OUR VARIABLES
 
 void main(void){
+    vec4 fog = vec4(0.7, 0.8, 0.9, 1.0);
+    float fogStart = 0.0;
+    float fogEnd = 20000.0;
+    float fogDensity = 0.0025;
+    float dist = length(coord.xyz - camera_loc);
+    float fogFactor= 1.0 -exp(-pow(dist*fogDensity,3));
+	//float fogFactor = clamp(((fogEnd-dist)/(fogEnd-fogStart)), 0.0, 1.0);
+
 
 
 	vec3 L = normalize(vLightDir);
@@ -52,8 +62,6 @@ void main(void){
 				* pow(max(dot(H,N),0.0),material.shininess*3.0);
 	}
 
-
-    fragColor = fragColor * 0.8  +  texture(s,tc) * 0.2 ;
-
+    fragColor = fragColor * 0.5 + (  mix( texture(s,tc),fog,fogFactor)) * 0.5 ;
 
 }

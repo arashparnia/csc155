@@ -19,6 +19,7 @@ uniform Material material;
 uniform mat4 mv_matrix;
 uniform mat4 proj_matrix;
 uniform mat4 normalMat;
+uniform mat4 shadowMVP;
 /*-----------------*/
 
 void main(void)
