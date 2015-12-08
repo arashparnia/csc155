@@ -77,11 +77,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private TextureReader tr = new TextureReader();
 	private  int grassTexture,rockTexture,waterTexture,heightTexture,normalTexture,textureID0,textureID1,textureID2,cloud3DTexture;
 	//-------------------------------------------------------------------------------------------MATERIALS
-	private float[] rockambient = {0.0f,0.0f,0.0f,1.0f};
-	private float[] rockdiffuse = {0.1f,0.1f,0.1f,1.0f};
-	private float[] rockspecular =  {0.1f,0.1f,0.1f,1.0f};
+	private float[] rockambient = {0.1745f,0.01175f,0.01175f,1.0f};
+	private float[] rockdiffuse = {0.61424f,0.04136f,0.04136f,1.0f};
+	private float[] rockspecular =  {0.727811f,0.626959f,0.626959f,1.0f};
 	private float[] rockemission = {0.1f,0.1f,0.1f,1.0f};
-	private float rockshininess = 0.0f;
+	private float rockshininess = 10f;
 	graphicslib3D.Material rockMaterial = new Material("rock",rockambient,rockdiffuse,rockspecular,rockemission,rockshininess);
 	private float[] grassambient = {0.0f,0.0f,0.0f,1.0f};
 	private float[] grassdiffuse = {0.1f,0.35f,0.1f,1.0f};
@@ -89,7 +89,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private float[] grassemission = {0.1f,0.1f,0.1f,1.0f};
 	private float grassshininess = 10f;
 	graphicslib3D.Material grassMaterial = new Material("grass",grassambient,grassdiffuse,grassspecular,grassemission,grassshininess);
-	private float[] sunambient = {1.0f,1.0f,1.0f,1.0f};
+	private float[] sunambient = {0.1f,0.1f,0.1f,1.0f};
 	private float[] sundiffuse = {1.0f,1.0f,1.0f,1.0f};
 	private float[] sunspecular =  {1.0f,1.0f,1.0f,1.0f};
 	private float[] sunemission = {1.0f,1.0f,1.0f,1.0f};
@@ -224,8 +224,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	}
 	private void transformGround(Matrix3D m) {
 		m.setToIdentity();
-		m.translate(0, 0, 0);
-		m.scale(5000,1,5000);
+		m.translate(0, -20, 0);
+		m.scale(5000,5,5000);
 	}
 	public void display(GLAutoDrawable drawable) {
 		GL4 gl = (GL4) drawable.getGL();
@@ -661,61 +661,6 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 
 		gl.glDrawArraysInstanced(GL_TRIANGLES, 0, grassModel.getIndices().length, 64 * 64);
-		//============================================================================================GROUND PASS 2
-
-
-		thisMaterial = grassMaterial;
-		installLights(rendering_program2, v_matrix, drawable);
-		transformGround(m_matrix);
-
-		//  build the shadow
-		shadowMVP2.setToIdentity();
-		shadowMVP2.concatenate(b);
-		shadowMVP2.concatenate(lightP_matrix);
-		shadowMVP2.concatenate(lightV_matrix);
-		shadowMVP2.concatenate(m_matrix);
-
-
-		//  build the MODEL-VIEW matrix
-		mv_matrix.setToIdentity();
-		mv_matrix.concatenate(v_matrix);
-		mv_matrix.concatenate(m_matrix);
-
-
-		//  put the MV and PROJ matrices into the corresponding uniforms
-		gl.glUniformMatrix4fv(mv_location, 1, false, mv_matrix.getFloatValues(), 0);
-		gl.glUniformMatrix4fv(proj_location, 1, false, proj_matrix.getFloatValues(), 0);
-		gl.glUniformMatrix4fv(n_location, 1, false, (mv_matrix.inverse()).transpose().getFloatValues(), 0);
-		gl.glUniformMatrix4fv(shadow_location, 1, false, shadowMVP2.getFloatValues(), 0);
-		gl.glUniform3f(cam_location, (float)xyz.getX(), (float)xyz.getY(), (float)xyz.getZ());
-
-		// set up vertices buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[100]);
-		gl.glVertexAttribPointer(0, 3, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(0);
-
-		// set up normals buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[101]);
-		gl.glVertexAttribPointer(1, 3, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(1);
-
-		// set up texture buffer
-		gl.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[102]);
-		gl.glVertexAttribPointer(2, 2, GL.GL_FLOAT, false, 0, 0);
-		gl.glEnableVertexAttribArray(2);
-
-		gl.glEnable(GL_CULL_FACE);
-		gl.glFrontFace(GL_CW);
-		gl.glEnable(GL_DEPTH_TEST);
-		gl.glDepthFunc(GL_LEQUAL);
-
-		gl.glActiveTexture(GL_TEXTURE1);
-		gl.glBindTexture(GL_TEXTURE_2D, grassTexture);
-		gl.glGenerateMipmap(GL_TEXTURE_2D);
-
-
-		gl.glDrawArrays(GL_TRIANGLES, 0, cube.getFValues().length/3);
-
 
 	}
 	//=========================================================================================================SKY
@@ -730,7 +675,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 		m_matrix.setToIdentity();
 		m_matrix.translate(xyz.getX(),xyz.getY() -100,xyz.getZ());
-		m_matrix.scale(500,500,500);
+		m_matrix.scale(200,200,200);
 		rotAmt = rotAmt + 0.1;
 		d = d + 0.0025f; if (d>=1.0f) d=0.0f;
 		m_matrix.rotateY(rotAmt);
@@ -784,7 +729,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
         cam_location = gl.glGetUniformLocation(rendering_program3, "camera_loc");
         shadow_location = gl.glGetUniformLocation(rendering_program3, "shadowMVP");
 
-		thisMaterial = Material.SILVER;
+		thisMaterial = rockMaterial;
 		installLights(rendering_program3, v_matrix, drawable);
 
 
