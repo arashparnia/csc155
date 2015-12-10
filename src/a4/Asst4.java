@@ -233,11 +233,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		FloatBuffer background = FloatBuffer.allocate(4);
 		gl.glClearBufferfv(gl.GL_COLOR, 0, background);
 
-//		double amt = (double)(System.currentTimeMillis()%360000)/10000.0;
-//        //System.out.println(amt);
-//		lightLoc.setX(Math.cos(amt)*500);
-//		lightLoc.setY(Math.sin(amt)*500);
-//		lightLoc.setZ(200);
+		double amt = (double)(System.currentTimeMillis()%360000)/10000.0;
+        //System.out.println(amt);
+		lightLoc.setX(Math.cos(amt)*500);
+		lightLoc.setY(Math.sin(amt)*500);
+		lightLoc.setZ(200);
 
 		//if (lightLoc.getY() < 0 )lights=0;else lights=1;
 
