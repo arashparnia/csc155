@@ -77,11 +77,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private TextureReader tr = new TextureReader();
 	private  int grassTexture,rockTexture,waterTexture,heightTexture,normalTexture,textureID0,textureID1,textureID2,cloud3DTexture;
 	//-------------------------------------------------------------------------------------------MATERIALS
-	private float[] rockambient = {0.1745f,0.01175f,0.01175f,1.0f};
-	private float[] rockdiffuse = {0.61424f,0.04136f,0.04136f,1.0f};
-	private float[] rockspecular =  {0.727811f,0.626959f,0.626959f,1.0f};
+	private float[] rockambient = {0.25f,0.20725f,0.20725f,1.0f};
+	private float[] rockdiffuse = {1.0f,0.829f,0.829f,1.0f};
+	private float[] rockspecular =  {0.296648f,0.296648f,0.296648f,1.0f};
 	private float[] rockemission = {0.1f,0.1f,0.1f,1.0f};
-	private float rockshininess = 10f;
+	private float rockshininess = 11.264f;
 	graphicslib3D.Material rockMaterial = new Material("rock",rockambient,rockdiffuse,rockspecular,rockemission,rockshininess);
 	private float[] grassambient = {0.0f,0.0f,0.0f,1.0f};
 	private float[] grassdiffuse = {0.1f,0.35f,0.1f,1.0f};
@@ -158,7 +158,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	}
 	public void init(GLAutoDrawable drawable) {
         for (int i = 0 ; i <raindDrops;i++)
-            rainLocation[i] = new Point3D( -100 + random.nextInt(200) , - random.nextInt(300) , -100 + random.nextInt(200) );
+            rainLocation[i] = new Point3D( -200 + random.nextInt(400) , - random.nextInt(500) , -200 + random.nextInt(400) );
 
 		GL4 gl = (GL4) drawable.getGL();
 		Shader sh = new Shader();
@@ -207,7 +207,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
     private void transformRock1(Matrix3D m,int i){
         m.setToIdentity();
         height -=0.1f;
-        if (height <0) height = 300;
+        if (height <0) height = 500;
         m.translate(rainLocation[i].getX(),rainLocation[i].getY() + height,rainLocation[i].getZ());
         //m.rotateY(height);
         m.scale(  random.nextFloat(),random.nextFloat(),  random.nextFloat());
@@ -549,7 +549,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		gl.glDrawArrays(GL_TRIANGLES, 0, rock.getIndices().length);
 //================================================================== draw the rock 1 PASS 2
         for (int i = 0 ; i < raindDrops ; i++) {
-            thisMaterial = Material.SILVER;
+            thisMaterial = rockMaterial;
             installLights(rendering_program2, v_matrix, drawable);
 
 
@@ -1099,9 +1099,9 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	{ for (int j=0; j<noiseWidth; j++)
 	{ for (int k=0; k<noiseDepth; k++)
 	{ // clouds (same as above with blue hue)
-		float hue = 20/360.0f;
+		float hue = 200/360.0f;
 		float sat = (float) turbulence(i,j,k,32) / 256.0f;
-		float bri = 70/100.0f;
+		float bri = 90/100.0f;
 		int rgb = Color.HSBtoRGB(hue,sat,bri);
 		Color c = new Color(rgb);
 		data[i*(noiseWidth*noiseHeight*4)+j*(noiseHeight*4)+k*4+0] = (byte) c.getRed();
