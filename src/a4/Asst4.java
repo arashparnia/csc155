@@ -127,7 +127,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 	private float d=0.0f; // depth for 3rd dimension of 3D noise texture
 	private double rotAmt=0.0;
-    final int raindDrops = 50;
+    final int raindDrops = 200;
     private Point3D[] rainLocation = new Point3D[raindDrops];
     private float height = 0;
 //====================================================================================================================
@@ -158,7 +158,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	}
 	public void init(GLAutoDrawable drawable) {
         for (int i = 0 ; i <raindDrops;i++)
-            rainLocation[i] = new Point3D( -200 + random.nextInt(400) , - random.nextInt(500) , -200 + random.nextInt(400) );
+            rainLocation[i] = new Point3D( -100 + random.nextInt(200) , - random.nextInt(300) , -100 + random.nextInt(200) );
 
 		GL4 gl = (GL4) drawable.getGL();
 		Shader sh = new Shader();
@@ -206,11 +206,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
     }
     private void transformRock1(Matrix3D m,int i){
         m.setToIdentity();
-        height +=0.01f;
-        if (height >500) height = 0;
+        height -=0.1f;
+        if (height <0) height = 300;
         m.translate(rainLocation[i].getX(),rainLocation[i].getY() + height,rainLocation[i].getZ());
-        m.rotateY(height);
-        m.scale(1+  random.nextFloat(),1+random.nextFloat(),1+  random.nextFloat());
+        //m.rotateY(height);
+        m.scale(  random.nextFloat(),random.nextFloat(),  random.nextFloat());
     }
 	private void transformGrass(Matrix3D m){
 		m.setToIdentity();
@@ -233,11 +233,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		FloatBuffer background = FloatBuffer.allocate(4);
 		gl.glClearBufferfv(gl.GL_COLOR, 0, background);
 
-		double amt = (double)(System.currentTimeMillis()%360000)/10000.0;
-        System.out.println(amt);
-		lightLoc.setX(Math.cos(amt)*500);
-		lightLoc.setY(Math.sin(amt)*500);
-		lightLoc.setZ(200);
+//		double amt = (double)(System.currentTimeMillis()%360000)/10000.0;
+//        //System.out.println(amt);
+//		lightLoc.setX(Math.cos(amt)*500);
+//		lightLoc.setY(Math.sin(amt)*500);
+//		lightLoc.setZ(200);
 
 		//if (lightLoc.getY() < 0 )lights=0;else lights=1;
 
