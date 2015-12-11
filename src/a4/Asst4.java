@@ -53,7 +53,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private Cube cube = new Cube();
 	private shapes.HalfSphere mySphere = new shapes.HalfSphere(48);
 	private shapes.Astroid rock = new shapes.Astroid(100);
-    private shapes.Astroid rock1 = new shapes.Astroid(100,4,4000,0.01f);
+    private shapes.Astroid rock1 = new shapes.Astroid(20,2,0,0.01f);
 	private ImportedModel grassModel = new ImportedModel("Grass_02.obj");
 	private ImportedModel myModel = new ImportedModel("Tiger.obj");
 	//------------------------------------------------------------------------------------------MATRICIES
@@ -159,6 +159,9 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	public void init(GLAutoDrawable drawable) {
         for (int i = 0 ; i <raindDrops;i++)
             rainLocation[i] = new Point3D( -200 + random.nextInt(400) , - random.nextInt(500) , -200 + random.nextInt(400) );
+
+		float[] control_points =
+				{-0.9f, 0.0f, 0.0f, 0.0f, 0.75f, 0.0f, 0.5f, -0.9f, 0.0f, 0.9f, 0.0f, 0.0f};
 
 		GL4 gl = (GL4) drawable.getGL();
 		Shader sh = new Shader();
