@@ -15,14 +15,15 @@ import com.jogamp.opengl.awt.GLCanvas;
 import graphicslib3D.shape.*;
 import com.jogamp.opengl.util.*;
 import models.ImportedModel;
-import shapes.Cube;
+import shapes.*;
+import shapes.Sphere;
 import utilities.*;
 
 public class Asst4 extends JFrame implements GLEventListener, ActionListener, MouseListener,MouseWheelListener,MouseMotionListener, KeyListener{
 
 	graphicslib3D.Material thisMaterial;
 	private GLCanvas myCanvas;
-	private int rendering_program1, rendering_program2,rendering_program3,rendering_program_Texture_3D;
+	private int rendering_program1, rendering_program2,rendering_program3,rendering_program_Texture_3D,rendering_program_geometry;
 	private int mvp_location,mv_location, proj_location, vertexLoc, n_location,shadow_location,d_location, cam_location;
 	
 	float aspect;
@@ -53,7 +54,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	private Cube cube = new Cube();
 	private shapes.HalfSphere mySphere = new shapes.HalfSphere(48);
 	private shapes.Astroid rock = new shapes.Astroid(100);
-    private shapes.Astroid rock1 = new shapes.Astroid(20,2,0,0.01f);
+    private shapes.Sphere rock1 = new Sphere(20);
 	private ImportedModel grassModel = new ImportedModel("Grass_02.obj");
 	private ImportedModel myModel = new ImportedModel("Tiger.obj");
 	//------------------------------------------------------------------------------------------MATRICIES
@@ -127,7 +128,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 
 	private float d=0.0f; // depth for 3rd dimension of 3D noise texture
 	private double rotAmt=0.0;
-    final int raindDrops = 200;
+    final int raindDrops = 50;
     private Point3D[] rainLocation = new Point3D[raindDrops];
     private float height = 0;
 //====================================================================================================================
@@ -170,6 +171,7 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		rendering_program2 = sh.createShaderPrograms(drawable,"shaders/Vert2.glsl","shaders/Frag2.glsl");
 		rendering_program3 = sh.createShaderPrograms(drawable,"shaders/Vert3.glsl","shaders/Frag3.glsl","shaders/TessC3.glsl","shaders/TessE3.glsl");
 		rendering_program_Texture_3D = sh.createShaderPrograms(drawable,"shaders/Vert3D.glsl","shaders/Frag3D.glsl");
+		rendering_program_geometry =   sh.createShaderPrograms(drawable,"shaders/VertGeometry.glsl","shaders/FragGeometry.glsl","shaders/geom.glsl");
 		setupVertices(gl);
 		setupShadowBuffers(drawable);
 		b.setElementAt(0,0,0.5);b.setElementAt(0,1,0.0);b.setElementAt(0,2,0.0);b.setElementAt(0,3,0.5f);
@@ -189,8 +191,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		generateNoise();
 		cloud3DTexture = loadNoiseTexture(drawable);
 
-		xyz.setZ(55);
-		xyz.setY(100);
+		xyz.setZ(150);
+		xyz.setY(150);
 		Matrix3D r = new Matrix3D();
 		r.rotate(-40, u.normalize());
 		n = n.mult(r);
@@ -212,8 +214,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
         height -=0.1f;
         if (height <0) height = 500;
         m.translate(rainLocation[i].getX(),rainLocation[i].getY() + height,rainLocation[i].getZ());
-        //m.rotateY(height);
-        m.scale(  random.nextFloat(),random.nextFloat(),  random.nextFloat());
+        m.rotateY(height);
+        m.scale(  2,2,.1);
     }
 	private void transformGrass(Matrix3D m){
 		m.setToIdentity();
@@ -236,11 +238,11 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		FloatBuffer background = FloatBuffer.allocate(4);
 		gl.glClearBufferfv(gl.GL_COLOR, 0, background);
 
-		double amt = (double)(System.currentTimeMillis()%360000)/10000.0;
-        //System.out.println(amt);
-		lightLoc.setX(Math.cos(amt)*500);
-		lightLoc.setY(Math.sin(amt)*500);
-		lightLoc.setZ(200);
+//		double amt = (double)(System.currentTimeMillis()%360000)/10000.0;
+//        //System.out.println(amt);
+//		lightLoc.setX(Math.cos(amt)*500);
+//		lightLoc.setY(Math.sin(amt)*500);
+//		lightLoc.setZ(200);
 
 		//if (lightLoc.getY() < 0 )lights=0;else lights=1;
 
@@ -677,8 +679,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 		d_location = gl.glGetUniformLocation(rendering_program_Texture_3D, "d");
 
 		m_matrix.setToIdentity();
-		m_matrix.translate(xyz.getX(),xyz.getY() -100,xyz.getZ());
-		m_matrix.scale(200,200,200);
+		m_matrix.translate(xyz.getX(),xyz.getY()-50 ,xyz.getZ());
+		m_matrix.scale(100,100,100);
 		rotAmt = rotAmt + 0.1;
 		d = d + 0.0025f; if (d>=1.0f) d=0.0f;
 		m_matrix.rotateY(rotAmt);
@@ -1103,8 +1105,8 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	{ for (int k=0; k<noiseDepth; k++)
 	{ // clouds (same as above with blue hue)
 		float hue = 200/360.0f;
-		float sat = (float) turbulence(i,j,k,32) / 256.0f;
-		float bri = 90/100.0f;
+		float sat = (float) turbulence(i,j,k,32) / 256.0f ;
+		float bri = 100/100.0f;
 		int rgb = Color.HSBtoRGB(hue,sat,bri);
 		Color c = new Color(rgb);
 		data[i*(noiseWidth*noiseHeight*4)+j*(noiseHeight*4)+k*4+0] = (byte) c.getRed();
@@ -1191,15 +1193,15 @@ public class Asst4 extends JFrame implements GLEventListener, ActionListener, Mo
 	// ------------------------------------------------------------------------------------- CONTROLS
 	@Override public void mouseWheelMoved(MouseWheelEvent e) {
 		if (e.getUnitsToScroll() < 0)
-			lightLoc.setY(lightLoc.getY()+.5);
+			lightLoc.setY(lightLoc.getY()+1 * speed);
 		else
-			lightLoc.setY(lightLoc.getY()-.5);
+			lightLoc.setY(lightLoc.getY()-1 * speed);
 	}
 	@Override public void mouseDragged(MouseEvent e) {
-		if (mousePoint.getX() > e.getX()) lightLoc.setX(lightLoc.getX()-.5);
-		if (mousePoint.getX() < e.getX()) lightLoc.setX(lightLoc.getX()+.5);
-		if (mousePoint.getY() > e.getY()) lightLoc.setZ(lightLoc.getZ()-.5);
-		if (mousePoint.getY() < e.getY()) lightLoc.setZ(lightLoc.getZ()+.5);
+		if (mousePoint.getX() > e.getX()) lightLoc.setX(lightLoc.getX()-1 * speed);
+		if (mousePoint.getX() < e.getX()) lightLoc.setX(lightLoc.getX()+1 * speed);
+		if (mousePoint.getY() > e.getY()) lightLoc.setZ(lightLoc.getZ()-1 * speed);
+		if (mousePoint.getY() < e.getY()) lightLoc.setZ(lightLoc.getZ()+1 * speed);
 		mousePoint.setLocation(e.getPoint());
 	}
 	@Override public void mouseMoved(MouseEvent e) {}
